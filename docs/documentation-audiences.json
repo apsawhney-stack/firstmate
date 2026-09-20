@@ -381,6 +381,10 @@
       "audience": "maintainer-architecture"
     },
     {
+      "path": "docs/remediation-increments.md",
+      "audience": "maintainer-architecture"
+    },
+    {
       "path": "docs/remote-secondmates.md",
       "audience": "operator-current"
     },

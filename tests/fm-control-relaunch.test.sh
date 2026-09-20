@@ -1513,6 +1513,79 @@ test_promotion_participates_in_the_lifecycle_lock_before_metadata_resolution() {
   pass "fm-promote: promotion participates in lifecycle serialization"
 }
 
+# --- opt-in task-contract binding across a relaunch (F10/F11) ---------------
+
+contract_adopt() {  # <case-dir> <id>
+  local dir=$1 id=$2
+  FM_HOME="$dir/home" FM_STATE_OVERRIDE="$dir/home/state" FM_DATA_OVERRIDE="$dir/home/data" \
+    "$ROOT/bin/fm-task-contract.sh" adopt "$id" \
+    --disposition coupled --invariant-complexity elevated --cross-object-coupling elevated \
+    --ambiguity low --blast-radius elevated --reversibility low --evidence-burden elevated 2>&1
+}
+
+# The single recorded value for a binding_* key, or an explicit marker when the
+# key is absent or duplicated (the invariant the serializer must preserve).
+contract_meta_field() {  # <case-dir> <id> <key>
+  local file="$1/home/state/$2.meta" count
+  count=$(grep -c "^$3=" "$file" 2>/dev/null || true)
+  if [ "${count:-0}" != 1 ]; then
+    printf '<%s lines>\n' "${count:-0}"
+    return
+  fi
+  grep "^$3=" "$file" | cut -d= -f2-
+}
+
+test_relaunch_reemits_the_binding_exactly_once() {
+  local dir out rc digest
+  dir=$(new_case contract rlc1)
+  add_ship_task "$dir" rlc1 claude
+  out=$(contract_adopt "$dir" rlc1)
+  rc=$?
+  expect_code 0 "$rc" "adopting a binding for a relaunch fixture should succeed: $out"
+  [ "$(contract_meta_field "$dir" rlc1 binding_rev)" = 1 ] \
+    || fail "adoption should record binding_rev=1, got $(contract_meta_field "$dir" rlc1 binding_rev)"
+  digest=$(contract_meta_field "$dir" rlc1 binding_digest)
+  [ -n "$digest" ] || fail "adoption should record a binding digest"
+
+  out=$(run_control "$dir" rlc1 relaunch --note "keep the binding")
+  rc=$?
+  expect_code 0 "$rc" "a bound relaunch should succeed: $out"
+  [ "$(contract_meta_field "$dir" rlc1 binding_rev)" = 1 ] \
+    || fail "the relaunch serializer must re-emit exactly one binding_rev, got $(contract_meta_field "$dir" rlc1 binding_rev)"
+  [ "$(contract_meta_field "$dir" rlc1 binding_digest)" = "$digest" ] \
+    || fail "the relaunch must preserve the validated binding digest"
+  pass "fm-control relaunch: the contract binding is re-emitted exactly once"
+}
+
+test_relaunch_refuses_an_edited_brief_without_readoption() {
+  local dir out rc before
+  dir=$(new_case contract-edit rlc2)
+  add_ship_task "$dir" rlc2 claude
+  contract_adopt "$dir" rlc2 >/dev/null
+  before=$(cat "$dir/home/state/rlc2.meta")
+  # An agent-free endpoint gets the direct relaunch past its endpoint check and
+  # down to the binding gate this test pins.
+  printf 'zsh' >"$dir/fake/command"
+  python3 - "$dir/home/data/rlc2/brief.md" <<'PY'
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    content = handle.read()
+content = content.replace("Preserve the task while replacing its agent process.", "An edited specification.", 1)
+with open(path, "w", encoding="utf-8") as handle:
+    handle.write(content)
+PY
+  out=$(run_spawn "$dir" rlc2 --relaunch --harness claude)
+  rc=$?
+  expect_code 1 "$rc" "an edited brief must refuse a relaunch: $out"
+  assert_contains "$out" "spec digest mismatch" \
+    "the relaunch refusal must name the edited specification"
+  [ "$(cat "$dir/home/state/rlc2.meta")" = "$before" ] \
+    || fail "a refused relaunch must leave the task record unchanged"
+  pass "fm-spawn relaunch: an edited brief without re-adoption refuses"
+}
+
 # --- 6. fm-spawn --relaunch's own refusals -----------------------------------
 
 test_spawn_relaunch_refuses_a_live_agent() {
@@ -1731,6 +1804,8 @@ test_secondmate_checkpoint_refuses_unreadable_child_state
 test_concurrent_relaunch_is_refused
 test_direct_spawn_relaunch_participates_in_the_lifecycle_lock
 test_promotion_participates_in_the_lifecycle_lock_before_metadata_resolution
+test_relaunch_reemits_the_binding_exactly_once
+test_relaunch_refuses_an_edited_brief_without_readoption
 test_spawn_relaunch_refuses_a_live_agent
 test_spawn_relaunch_refuses_a_symlinked_task_record_before_inspection
 test_spawn_relaunch_keeps_its_early_meta_lock_continuous

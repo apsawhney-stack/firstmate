@@ -62,7 +62,8 @@ The first mate can read, understand, and evolve every part of itself: plain inst
 When something is not working well, the captain can ask the first mate and it figures it out; captains using their own firstmate to improve the shared surface is how the fleet evolves in the open.
 Harness adapters earn trust through verification, and the fleet keeps sailing when any one vendor's tool degrades.
 Contracts bind to semantics a vendor actually exposes.
-Where a vendor exposes none, the fleet may read the rendered surface only as a named, quarantined, version-pinned adapter that carries its own verification, is expected to break on that vendor's next release, and is recorded as standing debt - never hardened into a shared contract.
+Where a vendor exposes none, the fleet may read the rendered surface, but only as a named, quarantined, version-pinned adapter that carries its own verification and is expected to break on that vendor's next release.
+Such a reading is a standing debt, recorded as one, and never hardens into a shared contract.
 Quota, model, and effort choices stay inspectable and captain-owned; the first mate never downgrades the intelligence doing the work without the captain's standing, explicit permission.
 
 ## Scope

@@ -86,13 +86,53 @@ fm_task_binding_intent_digest() {  # <brief>
   printf 'sha256:%s\n' "$hash"
 }
 
+fm_task_binding_heading_tail() {  # <brief> <heading>
+  local file=$1 heading=$2
+  [ -f "$file" ] || return 1
+  awk -v heading="$heading" '
+    {
+      line = $0
+      scan = line
+      spaces = 0
+      while (spaces < 3 && substr(scan, 1, 1) == " ") {
+        scan = substr(scan, 2)
+        spaces++
+      }
+      marker = substr(scan, 1, 1)
+      marker_len = 0
+      if (marker == "`" || marker == "~") {
+        while (substr(scan, marker_len + 1, 1) == marker) marker_len++
+      }
+      is_fence = marker_len >= 3
+      was_fenced = fenced
+      if (is_fence) {
+        rest = substr(scan, marker_len + 1)
+        if (!fenced) {
+          fenced = 1
+          fence_marker = marker
+          fence_len = marker_len
+        } else if (marker == fence_marker && marker_len >= fence_len && rest ~ /^[[:space:]]*$/) {
+          fenced = 0
+        }
+      }
+      if (!found && !was_fenced && line == heading) found = 1
+      if (found) print line
+    }
+    END { if (!found) exit 1 }
+  ' "$file"
+}
+
 fm_task_binding_effective_spec_text() {  # <brief>
-  local brief=$1 task_spec promoted_spec
+  local brief=$1 task_spec promoted_spec promoted_contract
   task_spec=$(fm_task_binding_subsection_text "$brief" "## Firstmate spec") || return 1
   printf '# Task/## Firstmate spec\n%s\n' "$task_spec"
   if fm_brief_heading_present "$brief" "# Current ship Firstmate spec"; then
     promoted_spec=$(fm_brief_heading_body "$brief" "# Current ship Firstmate spec") || return 1
     printf '\n# Current ship Firstmate spec\n%s\n' "$promoted_spec"
+  fi
+  if fm_brief_heading_present "$brief" "# Current delivery mode contract"; then
+    promoted_contract=$(fm_task_binding_heading_tail "$brief" "# Current delivery mode contract") || return 1
+    printf '\n%s\n' "$promoted_contract"
   fi
 }
 

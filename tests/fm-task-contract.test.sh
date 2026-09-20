@@ -167,7 +167,7 @@ PY
   pass "fm-task-contract: editing either Markdown subsection requires re-adoption"
 }
 
-test_promoted_ship_spec_edits_require_readoption() {
+test_promoted_ship_instructions_edits_require_readoption() {
   local home brief out
   home=$(make_home promoted)
   write_ship_brief "$home" t-promoted "Investigate and fix." "Scout-time findings are context."
@@ -176,7 +176,11 @@ test_promoted_ship_spec_edits_require_readoption() {
     printf '\n# Current ship Firstmate spec\n'
     printf 'Carry the promoted fix to completion.\n\n'
     printf '# Current delivery mode contract\n'
-    printf 'Delivery contract: mode=no-mistakes\n'
+    printf 'Delivery contract: mode=no-mistakes\n\n'
+    printf '# Current ship safety rule\n'
+    printf 'Never push to the default branch.\n\n'
+    printf '# Definition of done\n'
+    printf 'Deliver through no-mistakes.\n'
   } >>"$brief"
   adopt_default "$home" t-promoted >/dev/null
   python3 - "$brief" <<'PY'
@@ -193,7 +197,19 @@ PY
   assert_contains "$out" "spec digest mismatch" "an edited promoted ship spec must refuse"
   out=$(adopt_default "$home" t-promoted)
   assert_contains "$out" "rev=2" "re-adoption after a promoted ship spec edit must increment the revision"
-  pass "fm-task-contract: promoted ship spec edits require re-adoption"
+  python3 - "$brief" <<'PY'
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    content = handle.read()
+content = content.replace("Never push to the default branch.", "Never push to any protected branch.", 1)
+with open(path, "w", encoding="utf-8") as handle:
+    handle.write(content)
+PY
+  out=$(run_check "$home" t-promoted)
+  assert_contains "$out" "spec digest mismatch" "an edited promoted delivery contract must refuse"
+  pass "fm-task-contract: promoted ship instruction edits require re-adoption"
 }
 
 test_risk_change_requires_readoption_and_hashes() {
@@ -401,7 +417,7 @@ test_adoption_records_identity_and_never_rewrites_the_brief
 test_unchanged_identity_is_stable_across_checks
 test_hash_helper_falls_back_and_rejects_invalid_digests
 test_intent_and_spec_edits_require_readoption
-test_promoted_ship_spec_edits_require_readoption
+test_promoted_ship_instructions_edits_require_readoption
 test_risk_change_requires_readoption_and_hashes
 test_risk_floor_is_enforced_at_adoption
 test_copied_wrong_kind_and_missing_bindings_refuse

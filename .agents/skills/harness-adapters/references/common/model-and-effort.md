@@ -7,6 +7,7 @@ Add `references/common/dispatch.md` for configured profile precedence.
 
 `../../../bin/fm-spawn.sh` accepts concrete `--harness`, `--model`, and `--effort` values selected at intake; scripts never parse natural-language dispatch rules.
 The tool reference records verified flags, accepted values, omission behavior, and discovery.
+Use `../task-contract/SKILL.md`'s semantic suitability assessment as task-fit evidence for model and effort selection, not project or model labels.
 
 Effort precedence is a per-task captain instruction, then applicable dispatch profile or secondmate pin, then the fallback below.
 Never replace either higher-precedence value.
@@ -21,6 +22,7 @@ The explicit native `ultra` value follows the model-scoped refusal contract in `
 For other values, if requested effort is outside the adapter's accepted set, the spawn records `effort=` in task metadata but emits no effort flag.
 This preserves launch success instead of passing a known-bad value.
 A harness with no verified interactive effort flag follows the same record-and-omit contract.
+A recorded unsupported effort value is not evidence that it was applied; establish effective effort from the selected runtime's authoritative surface or disclose it as unknown.
 
 ## Harness and provider identity
 

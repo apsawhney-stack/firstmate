@@ -276,11 +276,13 @@ When the captain's intent refers to a report, decision, or PR ("do items 1, 2, 3
 This replaces the no-mistakes skill's advice to enrich \`--intent\` with decisions and tradeoffs; that advice does not apply to Firstmate-dispatched work.
 Do not hand-edit, commit, or fix findings yourself while a run is active - the pipeline applies every fix.
 
-One drive call blocks until the next gate or outcome, which routinely outlives what your harness lets a single command run: Claude Code kills a command at ten minutes maximum, while one fix round is capped around thirty minutes and up to three rounds chain.
-So background the drive call and poll \`no-mistakes axi status\` from a separate call instead of sitting in one blocking hold your harness will kill.
-Where a harness's own command limit is not established, assume it bounds commands and use that same background-and-poll shape.
-A killed or timed-out call is never evidence the daemon died: the daemon accepts your response immediately and runs the round in the background, so the call was only ever waiting for a read while the run kept working.
-Reattach and keep going rather than reporting the pipeline blocked; rule 7 owns the checks that decide when a pipeline block is real.
+Prefer the installed CLI's supported bounded \`--wait\` on \`no-mistakes axi run\` and \`no-mistakes axi respond\`; inspect their live help rather than assuming a version's flags or default duration.
+Choose a wait below the verified tool-command limit with return headroom; if that limit is unknown, start with a short bounded wait rather than claiming an unverified limit.
+Read every synchronous return and follow its help through the next gate or outcome.
+Wait expiry or a killed drive call is not run failure or cancellation: inspect \`no-mistakes axi status\` for the same run and reattach through the supported help, without blindly replaying an earlier \`respond\` mutation.
+Use runtime-supported background handling only when a bounded foreground wait cannot fit the tool budget or is unavailable, and retain and read its result; do not create a parallel driver or a tight polling loop.
+The worker remains the sole gate driver, and timeout grants no authority to edit, abort, restart, or recover branch custody outside the supported pipeline flow.
+Rule 7 owns the daemon checks that decide when a pipeline block is real.
 
 Two firstmate-specific rules layer on top of that guidance:
 - ask-user findings are never yours to answer: escalate to firstmate using rule 6's ask-user format and stop.

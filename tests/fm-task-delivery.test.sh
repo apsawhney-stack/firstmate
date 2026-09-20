@@ -380,6 +380,12 @@ STUB
     "promoted no-mistakes worker did not receive the --yes prohibition"
   assert_grep "It is banned fleet-wide" "$payload" \
     "promoted no-mistakes worker did not receive the fleet-wide ban wording"
+  assert_grep "supported bounded \`--wait\`" "$payload" \
+    "promoted no-mistakes worker did not receive bounded-wait guidance"
+  assert_grep "without blindly replaying an earlier \`respond\` mutation" "$payload" \
+    "promoted no-mistakes worker was not protected from response replay"
+  assert_no_grep "So background the drive call and poll" "$payload" \
+    "promotion retained the obsolete unconditional background guidance"
 
   payload="$TMP_ROOT/promote-dod/payload-promote-dod-direct-pr"
   assert_grep "supersede the scout delivery rules and report-based Definition of done" "$payload" \
@@ -756,7 +762,7 @@ EOF
 # No live model or pipeline is needed: spawn publishes this exact input before
 # the fixture backend refuses to create an endpoint.
 test_authorized_intent_keeps_words_without_composed_address() {
-  local rec home proj fakebin id words authorized out status marker n=0
+  local rec home proj fakebin id words authorized out status marker spec n=0
   rec=$(make_home intent-emission)
   IFS='|' read -r home proj fakebin <<EOF
 $rec
@@ -765,11 +771,24 @@ EOF
   words=$(printf '%s\n' 'Keep the original request intact.' '' "Preserve its provenance, punctuation, and \`literal code\`.")
   FM_HOME="$home" "$BRIEF" "$id" proj --mode no-mistakes >/dev/null 2>&1 \
     || fail "intent brief should scaffold"
-  fill_brief_subsections "$home/data/$id/brief.md" "$words" 'This build constraint must not become intent.'
+  spec=$(printf '%s\n' \
+    'Suitability: coupled; invariant and evidence complexity elevated, other axes low.' \
+    '### Accepted behavior and invariants' \
+    'Preserve identity across the relationship; allow matching identities, reject mismatches.' \
+    '### Scope and validation' \
+    'No API additions; exclude AGENTS.md and CLAUDE.md; run the documented focused test.' \
+    'Examples not applicable to unchanged prose, because it has no executable claim.' \
+    'Unresolved decisions: none.' \
+    '[captain] This marker inside Firstmate spec must not become authorized intent.')
+  fill_brief_subsections "$home/data/$id/brief.md" "$words" "$spec"
   out=$(run_spawn "$home" "$fakebin" "$id" "$proj" claude --mode no-mistakes --yolo off)
   assert_present "$home/data/$id/launch-brief.md" "plain intent was not serialized"
   authorized=$(awk '$0 == "## Captain intent authorized for --intent" { emit=1; next } emit { print }' "$home/data/$id/launch-brief.md")
   [ "$authorized" = "$words" ] || fail "authorized --intent must contain exactly the request, without headings, address, or contract prose: $authorized"
+  assert_grep 'Suitability: coupled' "$home/data/$id/launch-brief.md" \
+    "the compact contract must still reach the worker as specification"
+  assert_grep '### Scope and validation' "$home/data/$id/launch-brief.md" \
+    "nested completeness guidance disappeared from the worker specification"
 
   # The request itself may discuss an address spelling. It is data, not an
   # invitation to scrub the user's words or synthesize a different request.

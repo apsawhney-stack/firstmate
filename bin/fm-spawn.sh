@@ -4679,9 +4679,9 @@ if ! (umask 077 && printf '%s\n' "$LAUNCH" >"$LAUNCH_STAGE" &&
   echo "error: could not stage the launch command at $LAUNCH_FILE" >&2
   exit 1
 fi
-sleep 0.3
+sleep "${FM_SPAWN_LAUNCH_SETTLE:-0.3}"
 spawn_send_literal "$T" ". $(shell_quote "$LAUNCH_FILE")"
-sleep 0.3
+sleep "${FM_SPAWN_LAUNCH_SETTLE:-0.3}"
 if [ "${HERDR_PROJECTED:-0}" -eq 1 ]; then
   HERDR_PROJECTION_ABORT_CLEANUP=0
   spawn_herdr_presentation_order_lock_release

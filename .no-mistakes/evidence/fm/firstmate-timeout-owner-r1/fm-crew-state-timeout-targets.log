@@ -1,0 +1,2 @@
+ok - no ambient timeout command still uses the portable bound
+ok - bounded no-mistakes preserves cwd, argv, output, statuses, and portable timeout failure

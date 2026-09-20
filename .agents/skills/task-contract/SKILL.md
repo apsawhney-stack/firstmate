@@ -1,7 +1,7 @@
 ---
 name: task-contract
 description: >-
-  Agent-only semantic risk and specification procedure.
+  Agent-only semantic risk, specification, and opt-in lifecycle-binding procedure.
   Load before finalizing a ship specification or scout question, and before materially revising task scope.
   Feeds task suitability into existing model-fit selection without adding a routing system.
 user-invocable: false
@@ -14,6 +14,7 @@ metadata:
 Assess the work's semantics before selecting a profile, not its project, model, language, file count, or labels such as "DTO", "frontend", or "docs-only".
 Record a compact suitability basis and specification in `## Firstmate spec`; `../../../bin/fm-brief.sh` owns the scaffold.
 This is task-authoring guidance, not a machine-checked schema or proof that every invariant has been identified.
+The opt-in lifecycle binding proves only that adopted `## Captain's intent` and `## Firstmate spec` text stayed unchanged; it does not prove semantic quality.
 Do not add a model call, project adapter, capability registry, or extra review merely to fill the contract.
 
 ## Semantic risk and disposition
@@ -80,3 +81,11 @@ Reassess and route to firstmate if a new identity boundary appears, requirements
 Narrowing scope, supplying a missing example, resolving a decision or repairing the evidence path may be better than switching models.
 Repeated failures do not relax acceptance.
 `../../../AGENTS.md` sections 7 and 11 retain delivery, scope-change, validation custody, decision and merge authority: this procedure grants none of them and adds no review outside the selected delivery path.
+
+## Opt-in lifecycle binding
+
+Use `../../../bin/fm-task-contract.sh adopt <task-id>` only for a ship task whose brief should be lifecycle-bound.
+Pass the disposition and all six risk levels from the assessment above; the CLI owns accepted values, record format, monotonic revision, and guarded publication.
+After adoption, `../../../bin/fm-task-contract.sh check <task-id>` and launch or relaunch verify structural presence and integrity against the brief and task record.
+Any material change to the captain intent, Firstmate spec, ship kind, disposition, or risk levels requires deliberate re-adoption before launch.
+Unenrolled tasks remain legacy-compatible, and scout or secondmate tasks do not enroll.

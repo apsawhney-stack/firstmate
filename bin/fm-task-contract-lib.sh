@@ -164,7 +164,7 @@ fm_task_binding_dim_value() {  # <dimension> <invariant> <coupling> <ambiguity> 
 }
 
 # Print the exact key=value record for one binding. Callers compare it against the
-# canonical digest; the two risks and disposition come from Firstmate.
+# canonical digest; the six risk levels and disposition come from Firstmate.
 fm_task_binding_render() {  # <version> <task> <kind> <revision> <disposition> <dims...> <intent> <spec> <digest>
   local version=$1 task=$2 kind=$3 revision=$4 disposition=$5
   local invariant=$6 coupling=$7 ambiguity=$8 blast=$9 rever=${10} evidence=${11}

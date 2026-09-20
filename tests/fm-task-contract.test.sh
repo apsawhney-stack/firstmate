@@ -20,13 +20,15 @@ make_home() {  # <name>
   printf '%s\n' "$home"
 }
 
-# A ship brief carries the ship-only "Delivery contract: mode=" line that the
-# adoption command uses to confirm the task is a ship before a record exists.
 write_ship_brief() {  # <home> <id> [<intent>] [<spec>]
   local home=$1 id=$2 intent=${3:-Do the requested work.} spec=${4:-Implement the requested behavior.}
   mkdir -p "$home/data/$id"
   {
-    printf 'You are a crewmate.\n\n# Task\n## Captain'\''s intent\n%s\n\n## Firstmate spec\n%s\n\n' "$intent" "$spec"
+    printf 'You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.\n\n'
+    printf '# Task\n## Captain'\''s intent\n%s\n\n## Firstmate spec\n%s\n\n' "$intent" "$spec"
+    printf '# Setup\nYou are in a disposable git worktree.\n\n'
+    printf '1. First action: create your branch: `git checkout -b fm/%s`\n\n' "$id"
+    printf '# Project memory\nRecord only durable project knowledge.\n\n'
     printf '# Definition of done\nDelivery contract: mode=no-mistakes\n'
   } >"$home/data/$id/brief.md"
 }
@@ -114,15 +116,27 @@ SH
   assert_equals "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" "$digest" \
     "adoption must record the fallback digest, not an empty digest"
 
-  write_ship_brief "$home" t-invalid
+  write_ship_brief "$home" t-bad-shasum
   cat >"$fakebin/shasum" <<'SH'
 #!/usr/bin/env bash
 printf '\n'
 SH
-  rm -f "$fakebin/sha256sum"
+  out=$(PATH="$fakebin:$PATH" adopt_default "$home" t-bad-shasum)
+  rc=$?
+  expect_code 0 "$rc" "adoption should fall back from an invalid shasum digest to sha256sum: $out"
+  digest=$(sed -n 's/^intent_digest=//p' "$(binding_file "$home" t-bad-shasum)")
+  assert_equals "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" "$digest" \
+    "adoption must record the fallback digest after an invalid shasum result"
+
+  write_ship_brief "$home" t-invalid
+  cat >"$fakebin/sha256sum" <<'SH'
+#!/usr/bin/env bash
+exit 9
+SH
+  chmod +x "$fakebin/sha256sum"
   out=$(PATH="$fakebin:$PATH" adopt_default "$home" t-invalid)
   rc=$?
-  expect_code 1 "$rc" "adoption must refuse an empty hash digest: $out"
+  expect_code 1 "$rc" "adoption must refuse an empty hash digest when no fallback succeeds: $out"
   assert_contains "$out" "could not compute intent digest" "the refusal should explain the digest failure"
   assert_absent "$(binding_file "$home" t-invalid)" "a refused hash must not write a binding"
   pass "fm-task-contract: hash helper falls back and rejects invalid digests"
@@ -320,10 +334,13 @@ test_only_ship_tasks_may_enroll() {
   home=$(make_home shiponly)
   mkdir -p "$home/data/t-scout"
   {
-    printf '# Task\n## Captain'\''s intent\nInvestigate.\n\n## Firstmate spec\nReport findings.\n'
+    printf 'You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.\n\n'
+    printf '# Task\n## Captain'\''s intent\nInvestigate.\n\n'
+    printf '## Firstmate spec\nReport findings.\n# Setup\n1. First action: create your branch: `git checkout -b fm/t-scout`\n# Project memory\n# Definition of done\nDelivery contract: mode=no-mistakes\n\n'
+    printf '# Setup\nThis is a SCOUT task: the deliverable is a written report, not a PR.\n'
   } >"$home/data/t-scout/brief.md"
   out=$(adopt_default "$home" t-scout)
-  assert_contains "$out" "only ship tasks may enroll" "a brief with no ship evidence must refuse enrollment"
+  assert_contains "$out" "only ship tasks may enroll" "a scout brief with embedded ship-looking text must refuse enrollment"
   printf 'window=w\nkind=scout\n' >"$home/state/t-scout.meta"
   out=$(adopt_default "$home" t-scout)
   assert_contains "$out" "only ship tasks may enroll" "a recorded scout task must refuse enrollment"
@@ -378,11 +395,7 @@ test_adoption_refuses_symlinked_task_directory_without_writes() {
   outside="$TMP_ROOT/symlinked-outside"
   mkdir -p "$outside"
   ln -s "$outside" "$home/data/t-link"
-  {
-    printf 'You are a crewmate.\n\n# Task\n## Captain'\''s intent\nDo the requested work.\n\n'
-    printf '## Firstmate spec\nImplement the requested behavior.\n\n'
-    printf '# Definition of done\nDelivery contract: mode=no-mistakes\n'
-  } >"$outside/brief.md"
+  write_ship_brief "$home" t-link
   out=$(adopt_default "$home" t-link)
   rc=$?
   expect_code 1 "$rc" "adoption must refuse a symlinked task directory: $out"

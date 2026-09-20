@@ -36,35 +36,45 @@ fm_task_binding_file() {  # <data-dir> <task-id>
   printf '%s/%s/binding\n' "$1" "$2"
 }
 
+fm_task_binding_sha256_valid() {  # <digest>
+  [ "${#1}" -eq 64 ] || return 1
+  case "$1" in
+    *[!0-9A-Fa-f]*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
 fm_task_binding_sha256_text() {  # <text>
-  local text=$1 output hash
+  local text=$1 output hash saw_tool=0 invalid=0
   if command -v shasum >/dev/null 2>&1; then
+    saw_tool=1
     if output=$(printf '%s' "$text" | shasum -a 256 2>/dev/null); then
       hash=${output%%[[:space:]]*}
-      if [ "${#hash}" -eq 64 ]; then
-        case "$hash" in
-          *[!0-9A-Fa-f]*) ;;
-          *) printf '%s\n' "$hash"; return 0 ;;
-        esac
+      if fm_task_binding_sha256_valid "$hash"; then
+        printf '%s\n' "$hash"
+        return 0
       fi
-      FM_TASK_BINDING_ERROR="sha256 tool returned an invalid digest"
-      return 1
+      invalid=1
     fi
   fi
   if command -v sha256sum >/dev/null 2>&1; then
+    saw_tool=1
     if output=$(printf '%s' "$text" | sha256sum 2>/dev/null); then
       hash=${output%%[[:space:]]*}
-      if [ "${#hash}" -eq 64 ]; then
-        case "$hash" in
-          *[!0-9A-Fa-f]*) ;;
-          *) printf '%s\n' "$hash"; return 0 ;;
-        esac
+      if fm_task_binding_sha256_valid "$hash"; then
+        printf '%s\n' "$hash"
+        return 0
       fi
-      FM_TASK_BINDING_ERROR="sha256 tool returned an invalid digest"
-      return 1
+      invalid=1
     fi
   fi
-  FM_TASK_BINDING_ERROR="no sha256 tool is available (need shasum or sha256sum)"
+  if [ "$invalid" -eq 1 ]; then
+    FM_TASK_BINDING_ERROR="sha256 tool returned an invalid digest"
+  elif [ "$saw_tool" -eq 1 ]; then
+    FM_TASK_BINDING_ERROR="sha256 tool failed"
+  else
+    FM_TASK_BINDING_ERROR="no sha256 tool is available (need shasum or sha256sum)"
+  fi
   return 1
 }
 

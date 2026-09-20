@@ -201,14 +201,21 @@ if [ "$DIM_ambiguity" = high ] && [ "$DISPOSITION" != unresolved ]; then
   exit 1
 fi
 
-# Only ship tasks may enroll. The recorded kind wins when a task record exists;
-# otherwise the brief's ship-only delivery-contract line is the evidence.
 TASK_KIND=
 if [ -f "$META" ]; then
   TASK_KIND=$(fm_task_binding_record_get "$META" kind)
 fi
 if [ -z "$TASK_KIND" ]; then
-  if grep -q '^Delivery contract: mode=' "$BRIEF" 2>/dev/null; then
+  if awk '
+    NR == 1 && $0 == "You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human." { intro = 1 }
+    $0 == "# Setup" { setup = 1 }
+    /^1\. First action: create your branch:/ { branch = 1 }
+    $0 == "# Project memory" { memory = 1 }
+    $0 == "# Definition of done" { dod = 1 }
+    /^Delivery contract: mode=/ { delivery = 1 }
+    /^This is a SCOUT task:/ { scout = 1 }
+    END { exit !(intro && setup && branch && memory && dod && delivery && !scout) }
+  ' "$BRIEF" 2>/dev/null; then
     TASK_KIND=ship
   fi
 fi

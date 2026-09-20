@@ -36,15 +36,35 @@ fm_task_binding_file() {  # <data-dir> <task-id>
 }
 
 fm_task_binding_sha256_text() {  # <text>
-  local text=$1
+  local text=$1 output hash
   if command -v shasum >/dev/null 2>&1; then
-    printf '%s' "$text" | shasum -a 256 | awk '{print $1}'
-  elif command -v sha256sum >/dev/null 2>&1; then
-    printf '%s' "$text" | sha256sum | awk '{print $1}'
-  else
-    FM_TASK_BINDING_ERROR="no sha256 tool is available (need shasum or sha256sum)"
-    return 1
+    if output=$(printf '%s' "$text" | shasum -a 256 2>/dev/null); then
+      hash=${output%%[[:space:]]*}
+      if [ "${#hash}" -eq 64 ]; then
+        case "$hash" in
+          *[!0-9A-Fa-f]*) ;;
+          *) printf '%s\n' "$hash"; return 0 ;;
+        esac
+      fi
+      FM_TASK_BINDING_ERROR="sha256 tool returned an invalid digest"
+      return 1
+    fi
   fi
+  if command -v sha256sum >/dev/null 2>&1; then
+    if output=$(printf '%s' "$text" | sha256sum 2>/dev/null); then
+      hash=${output%%[[:space:]]*}
+      if [ "${#hash}" -eq 64 ]; then
+        case "$hash" in
+          *[!0-9A-Fa-f]*) ;;
+          *) printf '%s\n' "$hash"; return 0 ;;
+        esac
+      fi
+      FM_TASK_BINDING_ERROR="sha256 tool returned an invalid digest"
+      return 1
+    fi
+  fi
+  FM_TASK_BINDING_ERROR="no sha256 tool is available (need shasum or sha256sum)"
+  return 1
 }
 
 # The exact bytes of one Task subsection with only a single trailing newline
@@ -298,8 +318,14 @@ fm_task_binding_gate() {  # <data-dir> <state-dir> <task-id> <worker-kind> <brie
     return 1
   fi
 
-  recorded_intent=$(fm_task_binding_intent_digest "$brief") || return 1
-  recorded_spec=$(fm_task_binding_spec_digest "$brief") || return 1
+  recorded_intent=$(fm_task_binding_intent_digest "$brief") || {
+    [ -n "$FM_TASK_BINDING_ERROR" ] || FM_TASK_BINDING_ERROR="could not compute intent digest"
+    return 1
+  }
+  recorded_spec=$(fm_task_binding_spec_digest "$brief") || {
+    [ -n "$FM_TASK_BINDING_ERROR" ] || FM_TASK_BINDING_ERROR="could not compute spec digest"
+    return 1
+  }
   if [ "$intent_digest" != "$recorded_intent" ]; then
     FM_TASK_BINDING_ERROR="intent digest mismatch: the ## Captain's intent body changed after adoption; re-run bin/fm-task-contract.sh adopt $id"
     return 1
@@ -310,7 +336,10 @@ fm_task_binding_gate() {  # <data-dir> <state-dir> <task-id> <worker-kind> <brie
   fi
   expected_digest=$(fm_task_binding_compute_digest "$version" "$task" "$kind" "$revision" \
     "$disposition" "$invariant" "$coupling" "$ambiguity" "$blast" "$rever" "$evidence" \
-    "$intent_digest" "$spec_digest") || return 1
+    "$intent_digest" "$spec_digest") || {
+    [ -n "$FM_TASK_BINDING_ERROR" ] || FM_TASK_BINDING_ERROR="could not compute binding digest"
+    return 1
+  }
   if [ "$binding_digest" != "$expected_digest" ]; then
     FM_TASK_BINDING_ERROR="binding digest mismatch: the binding record was edited after adoption; re-run bin/fm-task-contract.sh adopt $id"
     return 1

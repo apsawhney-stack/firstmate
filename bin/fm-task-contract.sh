@@ -291,10 +291,12 @@ if [ -e "$BINDING_FILE" ]; then
 fi
 
 INTENT_DIGEST=$(fm_task_binding_intent_digest "$BRIEF") || {
+  [ -n "$FM_TASK_BINDING_ERROR" ] || FM_TASK_BINDING_ERROR="could not compute intent digest"
   echo "error: $FM_TASK_BINDING_ERROR" >&2
   exit 1
 }
 SPEC_DIGEST=$(fm_task_binding_spec_digest "$BRIEF") || {
+  [ -n "$FM_TASK_BINDING_ERROR" ] || FM_TASK_BINDING_ERROR="could not compute spec digest"
   echo "error: $FM_TASK_BINDING_ERROR" >&2
   exit 1
 }
@@ -302,6 +304,7 @@ BINDING_DIGEST=$(fm_task_binding_compute_digest "$FM_TASK_BINDING_VERSION_SUPPOR
   "$REVISION" "$DISPOSITION" "$DIM_invariant_complexity" "$DIM_cross_object_coupling" \
   "$DIM_ambiguity" "$DIM_blast_radius" "$DIM_reversibility" "$DIM_evidence_burden" \
   "$INTENT_DIGEST" "$SPEC_DIGEST") || {
+  [ -n "$FM_TASK_BINDING_ERROR" ] || FM_TASK_BINDING_ERROR="could not compute binding digest"
   echo "error: $FM_TASK_BINDING_ERROR" >&2
   exit 1
 }

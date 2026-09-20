@@ -91,6 +91,43 @@ test_unchanged_identity_is_stable_across_checks() {
   pass "fm-task-contract: an unchanged binding keeps its revision and digest"
 }
 
+test_hash_helper_falls_back_and_rejects_invalid_digests() {
+  local home dir fakebin out rc digest
+  home=$(make_home hashes)
+  write_ship_brief "$home" t-hash
+  dir="$TMP_ROOT/hashes"
+  fakebin="$dir/fakebin"
+  mkdir -p "$fakebin"
+  cat >"$fakebin/shasum" <<'SH'
+#!/usr/bin/env bash
+exit 9
+SH
+  cat >"$fakebin/sha256sum" <<'SH'
+#!/usr/bin/env bash
+printf 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  -\n'
+SH
+  chmod +x "$fakebin/shasum" "$fakebin/sha256sum"
+  out=$(PATH="$fakebin:$PATH" adopt_default "$home" t-hash)
+  rc=$?
+  expect_code 0 "$rc" "adoption should fall back from a failing shasum to sha256sum: $out"
+  digest=$(sed -n 's/^intent_digest=//p' "$(binding_file "$home" t-hash)")
+  assert_equals "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" "$digest" \
+    "adoption must record the fallback digest, not an empty digest"
+
+  write_ship_brief "$home" t-invalid
+  cat >"$fakebin/shasum" <<'SH'
+#!/usr/bin/env bash
+printf '\n'
+SH
+  rm -f "$fakebin/sha256sum"
+  out=$(PATH="$fakebin:$PATH" adopt_default "$home" t-invalid)
+  rc=$?
+  expect_code 1 "$rc" "adoption must refuse an empty hash digest: $out"
+  assert_contains "$out" "could not compute intent digest" "the refusal should explain the digest failure"
+  assert_absent "$(binding_file "$home" t-invalid)" "a refused hash must not write a binding"
+  pass "fm-task-contract: hash helper falls back and rejects invalid digests"
+}
+
 test_intent_and_spec_edits_require_readoption() {
   local home out brief
   home=$(make_home readopt)
@@ -333,6 +370,7 @@ test_scripts_parse_under_bash() {
 
 test_adoption_records_identity_and_never_rewrites_the_brief
 test_unchanged_identity_is_stable_across_checks
+test_hash_helper_falls_back_and_rejects_invalid_digests
 test_intent_and_spec_edits_require_readoption
 test_risk_change_requires_readoption_and_hashes
 test_risk_floor_is_enforced_at_adoption

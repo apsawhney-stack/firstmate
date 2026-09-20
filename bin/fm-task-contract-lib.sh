@@ -6,7 +6,7 @@
 # projection, and no semantic completeness check. This file owns exactly one
 # thing: an opt-in, versioned binding record that identifies one unchanged
 # brief by task, ship kind, monotonic revision, Firstmate-supplied risk levels,
-# the two exact subsection digests, and one canonical binding digest.
+# the intent and effective-spec digests, and one canonical binding digest.
 #
 # Sourced by bin/fm-task-contract.sh (the adoption/check CLI) and by
 # bin/fm-spawn.sh (the launch/relaunch gate and the sole metadata emitter).
@@ -19,8 +19,9 @@
 # adoption never rewrites the brief, and no new dependency is required.
 #
 # Structural identity only: a passing gate proves that the binding exists, that
-# it still matches the two Markdown subsections, and that the task record agrees.
-# It does not prove the risk assessment was correct or the specification good.
+# it still matches the Markdown request/specification contract, and that the task
+# record agrees. It does not prove the risk assessment was correct or the
+# specification good.
 
 # Output globals consumed by the sourcing caller: the launch gate's verdict
 # fields and the human-readable refusal diagnostic.
@@ -85,9 +86,19 @@ fm_task_binding_intent_digest() {  # <brief>
   printf 'sha256:%s\n' "$hash"
 }
 
+fm_task_binding_effective_spec_text() {  # <brief>
+  local brief=$1 task_spec promoted_spec
+  task_spec=$(fm_task_binding_subsection_text "$brief" "## Firstmate spec") || return 1
+  printf '# Task/## Firstmate spec\n%s\n' "$task_spec"
+  if fm_brief_heading_present "$brief" "# Current ship Firstmate spec"; then
+    promoted_spec=$(fm_brief_heading_body "$brief" "# Current ship Firstmate spec") || return 1
+    printf '\n# Current ship Firstmate spec\n%s\n' "$promoted_spec"
+  fi
+}
+
 fm_task_binding_spec_digest() {  # <brief>
   local text hash
-  text=$(fm_task_binding_subsection_text "$1" "## Firstmate spec") || return 1
+  text=$(fm_task_binding_effective_spec_text "$1") || return 1
   hash=$(fm_task_binding_sha256_text "$text") || {
     [ -n "$FM_TASK_BINDING_ERROR" ] || FM_TASK_BINDING_ERROR="no sha256 tool is available (need shasum or sha256sum)"
     return 1

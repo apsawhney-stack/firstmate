@@ -36,7 +36,7 @@ A rigid script must never adjudicate meaning, and intelligence must never be spe
 Scripts stop safely and report when the world surprises them; agents read, interpret, and decide.
 Token efficiency is a first-class concern: every agent's context stays lean, and every task is achieved with the fewest tokens that do it well.
 The command structure stays flat: every layer between the captain's intent and the acting agent costs fidelity and tokens, so depth is capped, not grown.
-The always-loaded contract carries a stated ceiling of 9,000 words, and a change that would cross it must prune or move content behind a trigger before it lands.
+The always-loaded contract stays compact, and a change that would bloat it must prune or move content behind a trigger before it lands.
 
 ## A restart is a non-event
 

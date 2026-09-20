@@ -95,7 +95,8 @@ Malformed configuration is an actionable error, not a candidate to rank around.
 
 ### 2. Reasoning-class fit
 
-Keep only candidates that meet the required reasoning class for this task (a simple bug fix versus very-difficult design).
+Derive the required reasoning class from `../task-contract/SKILL.md`'s semantic suitability assessment, keeping its uncertainty visible rather than substituting project or model labels.
+Keep only candidates that meet that task's reasoning class, using the model/effort owner's effective-effort evidence rather than an unsupported recorded value.
 Never use `spendPriority` or remaining quota to silently replace that class.
 When every remaining candidate is tight, dispatch inside the strongest-reasoning class if one of those candidates can proceed, or stop and report that the strongest-class choice cannot proceed rather than downgrading it to spend or conserve quota.
 

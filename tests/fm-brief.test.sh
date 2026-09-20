@@ -174,6 +174,10 @@ test_help_includes_entire_header() {
   local help
   help=$("$ROOT/bin/fm-brief.sh" --help)
   assert_contains "$help" "Refuses to overwrite an existing brief." "fm-brief.sh --help omitted its header terminator"
+  assert_contains "$help" "Before filling the spec, follow .agents/skills/task-contract/SKILL.md" \
+    "fm-brief.sh --help omitted the task-authoring procedure"
+  assert_contains "$help" "proportionate specification completeness" \
+    "fm-brief.sh --help omitted proportionate spec guidance"
   pass "fm-brief.sh: --help renders the complete header"
 }
 
@@ -373,7 +377,29 @@ test_no_mistakes_dod_wording() {
     "no-mistakes DOD still states the --yes ban as a preference"
   assert_no_grep "no-mistakes refuses" "$brief" \
     "no-mistakes DOD must not claim the tool itself refuses --yes"
-  pass "fm-brief.sh: no-mistakes DOD keeps its apostrophe prose and bans --yes outright"
+  assert_grep "supported bounded \`--wait\`" "$brief" \
+    "no-mistakes DOD must prefer the supported bounded wait"
+  assert_grep "inspect their live help" "$brief" \
+    "no-mistakes DOD must discover supported flags and durations"
+  assert_grep "below the verified tool-command limit with return headroom" "$brief" \
+    "no-mistakes DOD must leave tool-budget headroom"
+  assert_grep "if that limit is unknown, start with a short bounded wait" "$brief" \
+    "no-mistakes DOD must not invent a command limit"
+  assert_grep "Read every synchronous return" "$brief" \
+    "no-mistakes DOD must process synchronous results"
+  assert_grep "Wait expiry or a killed drive call is not run failure or cancellation" "$brief" \
+    "no-mistakes DOD must not confuse an expired wait with pipeline failure"
+  assert_grep "without blindly replaying an earlier \`respond\` mutation" "$brief" \
+    "no-mistakes DOD must not replay a timed-out gate response"
+  assert_grep "background handling only when a bounded foreground wait cannot fit" "$brief" \
+    "no-mistakes DOD must reserve background handling for the fallback"
+  assert_grep "worker remains the sole gate driver" "$brief" \
+    "no-mistakes DOD must preserve worker gate ownership"
+  assert_grep "timeout grants no authority to edit, abort, restart, or recover branch custody" "$brief" \
+    "no-mistakes DOD must preserve custody on timeout"
+  assert_no_grep "So background the drive call and poll" "$brief" \
+    "no-mistakes DOD retained universal background-and-poll guidance"
+  pass "fm-brief.sh: no-mistakes DOD preserves intent, bounded waits, custody, and the --yes ban"
 }
 
 test_ask_user_escalation_format() {
@@ -429,20 +455,52 @@ test_ask_user_escalation_format() {
 }
 
 test_ship_project_memory_wording() {
-  local home id brief
+  local home id brief mode scope content spec
   home="$TMP_ROOT/project-memory-home"
   mkdir -p "$home/data"
-  id="brief-memory-c1"
-  FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$id" some-proj --mode no-mistakes >/dev/null 2>&1
-  brief="$home/data/$id/brief.md"
-  assert_present "$brief" "brief was not scaffolded"
+  # Scope is authored after scaffolding, not parsed by a new flag or classifier.
+  # Assert the instructions each worker receives, not model adherence to prose.
+  for mode in no-mistakes direct-PR local-only; do
+    for scope in bounded ordinary; do
+      id="brief-memory-$mode-$scope"
+      FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$id" some-proj --mode "$mode" >/dev/null 2>&1 \
+        || fail "$mode $scope memory scaffold failed"
+      brief="$home/data/$id/brief.md"
+      if [ "$scope" = bounded ]; then
+        spec='Edit only src/label.txt; project instruction files including AGENTS.md and CLAUDE.md are excluded.'
+      else
+        spec='Update the label and preserve reusable project knowledge through normal project-memory guidance.'
+      fi
+      content=$(cat "$brief")
+      content=${content//'{TASK}'/'Correct the label.'}
+      content=${content//'{FIRSTMATE_SPEC}'/$spec}
+      printf '%s\n' "$content" > "$brief"
+      assert_grep "$spec" "$brief" "$mode $scope lost the authored scope"
+      assert_grep 'explicitly bounded to exclude project instruction files' "$brief" \
+        "$mode $scope omitted the instruction-file exclusion condition"
+      assert_grep "do not edit them or run \`fm-ensure-agents-md.sh\` or another mutating memory helper, even when those files already exist" "$brief" \
+        "$mode $scope must forbid mutating memory helpers under the exclusion"
+      assert_grep "$home/data/$id/report.md" "$brief" \
+        "$mode $scope lost the task-local knowledge destination"
+      assert_grep 'for separately authorized follow-up' "$brief" \
+        "$mode $scope must not grant authority to widen scope"
+      assert_grep 'that report is an allowed write outside the worktree' "$brief" \
+        "$mode $scope must permit only the named external report write"
+      assert_grep "Otherwise, if \`AGENTS.md\` or \`CLAUDE.md\` already exists" "$brief" \
+        "$mode $scope lost ordinary project memory behavior"
+      assert_grep "run \`$ROOT/bin/fm-ensure-agents-md.sh .\` in the worktree" "$brief" \
+        "$mode $scope lost the ordinary helper invocation"
+      assert_no_grep "If \`AGENTS.md\` or \`CLAUDE.md\` already exists" "$brief" \
+        "$mode $scope retained a competing unconditional memory instruction"
+    done
+  done
   assert_grep "Record only project knowledge useful to almost every future session." "$brief" \
     "project-memory contract lost the durable-knowledge bar"
   assert_grep "prefer a pointer to the authoritative file, command, or doc over copying the detail" "$brief" \
     "project-memory contract lost pointer-over-copy guidance"
   assert_grep "follow \`$ROOT/bin/fm-ensure-agents-md.sh\`'s self-governance contract" "$brief" \
     "project-memory contract no longer defers to the ensure helper"
-  pass "fm-brief.sh: ship project-memory wording carries the AGENTS.md authoring bar"
+  pass "fm-brief.sh: all ship modes preserve bounded and ordinary project-memory instructions"
 }
 
 test_herdr_lab_contract_is_explicit_and_complete() {

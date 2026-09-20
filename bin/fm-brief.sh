@@ -8,7 +8,9 @@
 # report, decision, or PR the ask refers to, without added speaker labels or
 # direct address) and `{FIRSTMATE_SPEC}`
 # under `## Firstmate spec` (build instructions, which are never the captain's
-# intent). bin/fm-dod-lib.sh owns the no-mistakes `--intent` contract those
+# intent). Before filling the spec, follow .agents/skills/task-contract/SKILL.md
+# for semantic risk, suitability, and proportionate specification completeness.
+# bin/fm-dod-lib.sh owns the no-mistakes `--intent` contract those
 # subsections feed; bin/fm-spawn.sh refuses leftover placeholders and a
 # `## Captain's intent` line opening with a Captain label or address. Secondmate
 # charters still use a single `{TASK}` charter fill. Firstmate may adjust other
@@ -65,9 +67,11 @@
 # handled/ (record, doorbell, and ladder owned by bin/fm-task-inbox-lib.sh).
 # Ship tasks include a project-memory section so durable project-intrinsic
 # learnings can be committed to AGENTS.md through the project's delivery path;
-# it carries the AGENTS.md authoring bar (widely useful knowledge only, pointers
-# over copied detail) and defers self-governance recognition and insertion to
-# fm-ensure-agents-md.sh's contract.
+# explicitly bounded tasks excluding project instruction files skip the mutating
+# memory helper and retain reusable knowledge in the task report for separately
+# authorized follow-up. Otherwise the section carries the AGENTS.md authoring bar
+# (widely useful knowledge only, pointers over copied detail) and defers
+# self-governance recognition and insertion to fm-ensure-agents-md.sh's contract.
 # Scaffolds carry no role scope: fm-spawn.sh supplies fm_brief_worker_role from
 # fm-dod-lib.sh to every ship/scout launch brief, so this file never becomes a
 # second owner of a contract that must stay current across relaunches.
@@ -506,7 +510,9 @@ $ASK_USER_BLOCK
 $INBOX_SECTION
 
 # Project memory
-If \`AGENTS.md\` or \`CLAUDE.md\` already exists, or if this task produced durable project-intrinsic knowledge, run \`$FM_ROOT/bin/fm-ensure-agents-md.sh .\` in the worktree.
+If this task is explicitly bounded to exclude project instruction files (including \`AGENTS.md\` and \`CLAUDE.md\`), do not edit them or run \`fm-ensure-agents-md.sh\` or another mutating memory helper, even when those files already exist.
+Instead, preserve any reusable project knowledge in \`$DATA/$ID/report.md\` for separately authorized follow-up; that report is an allowed write outside the worktree, not permission to expand project scope.
+Otherwise, if \`AGENTS.md\` or \`CLAUDE.md\` already exists, or if this task produced durable project-intrinsic knowledge, run \`$FM_ROOT/bin/fm-ensure-agents-md.sh .\` in the worktree.
 Record only project knowledge useful to almost every future session.
 For anything the codebase already shows, prefer a pointer to the authoritative file, command, or doc over copying the detail.
 If you touch a project \`AGENTS.md\`, follow \`$FM_ROOT/bin/fm-ensure-agents-md.sh\`'s self-governance contract in the same pass.

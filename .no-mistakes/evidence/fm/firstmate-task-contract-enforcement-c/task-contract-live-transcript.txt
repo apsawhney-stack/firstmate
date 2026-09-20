@@ -1,0 +1,49 @@
+Firstmate task-contract live validation transcript
+workdir=/Users/aps/.no-mistakes/worktrees/65bf6513b0ae/01M30F7RB3V1BGW2ZXWBF5CWQC
+temp_home=/tmp/fm-task-contract-live.04uPp4/home
+
+$ bin/fm-task-contract.sh check t-contract
+ok: unenrolled
+
+$ bin/fm-task-contract.sh adopt t-contract --disposition routine --invariant-complexity low --cross-object-coupling low --ambiguity low --blast-radius low --reversibility low --evidence-burden low
+adopted: t-contract rev=1 digest=sha256:c224e4be788c7c50c525ee8a7b0ad0be567be8e25828f1926c97ce05d3e1e307
+
+$ bin/fm-task-contract.sh check t-contract
+ok: enrolled rev=1 digest=sha256:c224e4be788c7c50c525ee8a7b0ad0be567be8e25828f1926c97ce05d3e1e307
+
+$ bin/fm-task-contract.sh check t-contract
+error: spec digest mismatch: the ## Firstmate spec body changed after adoption; re-run bin/fm-task-contract.sh adopt t-contract
+check_exit=1
+
+$ bin/fm-task-contract.sh adopt t-contract --disposition routine --invariant-complexity low --cross-object-coupling low --ambiguity low --blast-radius low --reversibility low --evidence-burden low
+adopted: t-contract rev=2 digest=sha256:0e8b91a9a3d60342a79b67c0f392315f8b5b16d546f7ad26686451cab33df138
+
+$ bin/fm-task-contract.sh check t-contract
+ok: enrolled rev=2 digest=sha256:0e8b91a9a3d60342a79b67c0f392315f8b5b16d546f7ad26686451cab33df138
+
+$ bin/fm-task-contract.sh adopt t-floor --disposition routine --invariant-complexity unknown --cross-object-coupling low --ambiguity low --blast-radius low --reversibility low --evidence-burden low
+error: disposition routine cannot cover an unknown risk level
+risk_floor_exit=1
+
+$ bin/fm-task-contract.sh adopt t-promoted --disposition routine --invariant-complexity low --cross-object-coupling low --ambiguity low --blast-radius low --reversibility low --evidence-burden low
+adopted: t-promoted rev=1 digest=sha256:da2aa5827a427bdcc8728a6cd253ceca4133302db9847da49b56b12b0abfbc50
+
+$ bin/fm-task-contract.sh check t-promoted
+error: spec digest mismatch: the ## Firstmate spec body changed after adoption; re-run bin/fm-task-contract.sh adopt t-promoted
+promoted_delivery_edit_exit=1
+
+$ bin/fm-task-contract.sh adopt t-spawn --disposition routine --invariant-complexity low --cross-object-coupling low --ambiguity low --blast-radius low --reversibility low --evidence-burden low
+adopted: t-spawn rev=1 digest=sha256:686dfe8dc3f21c3d7b1e7c0c2aa23f288c9533806eed163395f15264e1a464e4
+
+$ FM_GATE_REFUSE_BYPASS=1 FM_BACKEND=herdr bin/fm-spawn.sh t-spawn <project> --mode local-only --yolo off --backend herdr --harness pi
+error: spec digest mismatch: the ## Firstmate spec body changed after adoption; re-run bin/fm-task-contract.sh adopt t-spawn
+spawn_exit=1
+
+Persisted task files after refused spawn:
+<temp>/home/data/t-contract/binding
+<temp>/home/data/t-contract/brief.md
+<temp>/home/data/t-floor/brief.md
+<temp>/home/data/t-promoted/binding
+<temp>/home/data/t-promoted/brief.md
+<temp>/home/data/t-spawn/binding
+<temp>/home/data/t-spawn/brief.md

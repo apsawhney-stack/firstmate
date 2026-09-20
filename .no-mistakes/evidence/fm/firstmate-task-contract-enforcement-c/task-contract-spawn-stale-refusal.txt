@@ -1,0 +1,5 @@
+$ FM_GATE_REFUSE_BYPASS=1 FM_HOME=$HOME_DIR bin/fm-spawn.sh t-spawn $PROJ --mode no-mistakes --yolo off --harness 'sleep 60' --backend herdr
+error: intent digest mismatch: the ## Captain's intent body changed after adoption; re-run bin/fm-task-contract.sh adopt t-spawn
+exit=1
+$ test -e $HOME_DIR/state/t-spawn.meta || echo no task metadata was published
+no task metadata was published

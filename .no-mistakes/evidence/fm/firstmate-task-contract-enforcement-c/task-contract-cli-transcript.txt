@@ -1,0 +1,24 @@
+$ FM_HOME=$HOME_DIR bin/fm-task-contract.sh check t-live
+ok: unenrolled
+
+$ FM_HOME=$HOME_DIR bin/fm-task-contract.sh adopt t-live --disposition coupled --invariant-complexity elevated --cross-object-coupling elevated --ambiguity low --blast-radius elevated --reversibility low --evidence-burden elevated
+adopted: t-live rev=1 digest=sha256:8552528021b31d8aa05d1692f1063dcbf8eead3f639b985c6aa54bc90df3bbf5
+
+$ FM_HOME=$HOME_DIR bin/fm-task-contract.sh check t-live
+ok: enrolled rev=1 digest=sha256:8552528021b31d8aa05d1692f1063dcbf8eead3f639b985c6aa54bc90df3bbf5
+
+$ # after editing ## Captain's intent
+$ FM_HOME=$HOME_DIR bin/fm-task-contract.sh check t-live
+error: intent digest mismatch: the ## Captain's intent body changed after adoption; re-run bin/fm-task-contract.sh adopt t-live
+exit=1
+
+$ FM_HOME=$HOME_DIR bin/fm-task-contract.sh adopt t-live ...
+adopted: t-live rev=2 digest=sha256:9534d1c30136a2c7cd3d6701fc38670a63c4399fe0e609d50333386e599f7206
+
+$ FM_HOME=$HOME_DIR bin/fm-task-contract.sh check t-live
+ok: enrolled rev=2 digest=sha256:9534d1c30136a2c7cd3d6701fc38670a63c4399fe0e609d50333386e599f7206
+
+$ # tamper with recorded risk field in the authoritative binding
+$ FM_HOME=$HOME_DIR bin/fm-task-contract.sh check t-live
+error: binding digest mismatch: the binding record was edited after adoption; re-run bin/fm-task-contract.sh adopt t-live
+exit=1

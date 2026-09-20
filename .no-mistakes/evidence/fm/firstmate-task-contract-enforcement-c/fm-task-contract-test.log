@@ -1,0 +1,12 @@
+ok - fm-task-contract: adoption records identity and leaves the brief untouched
+ok - fm-task-contract: an unchanged binding keeps its revision and digest
+ok - fm-task-contract: editing either Markdown subsection requires re-adoption
+ok - fm-task-contract: risk changes need re-adoption and change the digest
+ok - fm-task-contract: the minimal objective risk floor is enforced
+ok - fm-task-contract: copied, wrong-kind, and missing bindings refuse
+ok - fm-task-contract: duplicated or stale task-record bindings refuse
+ok - fm-task-contract: only ship tasks may enroll
+ok - fm-task-contract: an unenrolled legacy task stays unchanged
+ok - fm-task-contract: adoption serializes against the task control lock
+ok - fm-task-contract: scripts parse cleanly
+ok - fm-task-contract

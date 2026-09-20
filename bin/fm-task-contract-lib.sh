@@ -56,15 +56,23 @@ fm_task_binding_subsection_text() {  # <brief> <heading>
 }
 
 fm_task_binding_intent_digest() {  # <brief>
-  local text
+  local text hash
   text=$(fm_task_binding_subsection_text "$1" "## Captain's intent") || return 1
-  printf 'sha256:%s\n' "$(fm_task_binding_sha256_text "$text")"
+  hash=$(fm_task_binding_sha256_text "$text") || {
+    [ -n "$FM_TASK_BINDING_ERROR" ] || FM_TASK_BINDING_ERROR="no sha256 tool is available (need shasum or sha256sum)"
+    return 1
+  }
+  printf 'sha256:%s\n' "$hash"
 }
 
 fm_task_binding_spec_digest() {  # <brief>
-  local text
+  local text hash
   text=$(fm_task_binding_subsection_text "$1" "## Firstmate spec") || return 1
-  printf 'sha256:%s\n' "$(fm_task_binding_sha256_text "$text")"
+  hash=$(fm_task_binding_sha256_text "$text") || {
+    [ -n "$FM_TASK_BINDING_ERROR" ] || FM_TASK_BINDING_ERROR="no sha256 tool is available (need shasum or sha256sum)"
+    return 1
+  }
+  printf 'sha256:%s\n' "$hash"
 }
 
 # Canonical serialization of the binding identity, sorted by key and without the
@@ -90,9 +98,13 @@ fm_task_binding_canonical() {  # <version> <task> <kind> <revision> <disposition
 }
 
 fm_task_binding_compute_digest() {  # same args as fm_task_binding_canonical
-  local text
+  local text hash
   text=$(fm_task_binding_canonical "$@") || return 1
-  printf 'sha256:%s\n' "$(fm_task_binding_sha256_text "$text")"
+  hash=$(fm_task_binding_sha256_text "$text") || {
+    [ -n "$FM_TASK_BINDING_ERROR" ] || FM_TASK_BINDING_ERROR="no sha256 tool is available (need shasum or sha256sum)"
+    return 1
+  }
+  printf 'sha256:%s\n' "$hash"
 }
 
 # Last value of one key in a flat key=value record. A missing file, missing key,

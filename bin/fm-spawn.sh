@@ -3051,6 +3051,12 @@ if [ "$SPAWN_META_LOCK_HELD" != 1 ]; then
   fm_lock_acquire_wait "$SPAWN_META_LOCK"
   SPAWN_META_LOCK_HELD=1
 fi
+if [ "$KIND" = ship ] && fm_task_binding_enrolled "$DATA" "$STATE" "$ID"; then
+  if ! fm_task_binding_gate "$DATA" "$STATE" "$ID" "$KIND" "${SOURCE_BRIEF:-$BRIEF}"; then
+    echo "error: $FM_TASK_BINDING_ERROR" >&2
+    exit 1
+  fi
+fi
 if [ -e "$STATE/$ID.backlog-close" ] || [ -L "$STATE/$ID.backlog-close" ]; then
   echo "error: task $ID has a pending authoritative backlog close at $STATE/$ID.backlog-close; finish or repair that close before dispatching a new worker" >&2
   exit 1

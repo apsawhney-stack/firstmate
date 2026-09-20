@@ -290,6 +290,39 @@ test_adoption_serializes_against_the_task_lock() {
   pass "fm-task-contract: adoption serializes against the task control lock"
 }
 
+test_adoption_failure_preserves_existing_binding_pair() {
+  local home dir fakebin real_mv out rc check
+  home=$(make_home transactional)
+  write_ship_brief "$home" t-transactional
+  printf 'window=w\nkind=ship\n' >"$home/state/t-transactional.meta"
+  adopt_default "$home" t-transactional >/dev/null
+  dir="$TMP_ROOT/transactional"
+  fakebin="$dir/fakebin"
+  mkdir -p "$fakebin"
+  real_mv=$(command -v mv)
+  cat >"$fakebin/mv" <<'SH'
+#!/usr/bin/env bash
+last=
+for arg in "$@"; do
+  last=$arg
+done
+if [ "$last" = "$FM_FAIL_META_PUBLISH" ]; then
+  exit 1
+fi
+exec "$FM_REAL_MV" "$@"
+SH
+  chmod +x "$fakebin/mv"
+  out=$(FM_REAL_MV="$real_mv" FM_FAIL_META_PUBLISH="$home/state/t-transactional.meta" \
+    PATH="$fakebin:$PATH" adopt_default "$home" t-transactional)
+  rc=$?
+  expect_code 1 "$rc" "adoption must fail when task-record publication fails: $out"
+  assert_contains "$out" "error:" "the failed adoption should explain the publication failure"
+  check=$(run_check "$home" t-transactional)
+  assert_contains "$check" "ok: enrolled rev=1 " \
+    "a failed re-adoption must preserve the previous binding and task-record pair"
+  pass "fm-task-contract: failed task-record publication preserves the binding pair"
+}
+
 test_scripts_parse_under_bash() {
   local f
   for f in "$ROOT/bin/fm-task-contract.sh" "$ROOT/bin/fm-task-contract-lib.sh"; do
@@ -308,6 +341,7 @@ test_task_record_disagreement_refuses
 test_only_ship_tasks_may_enroll
 test_legacy_task_is_unenrolled_and_unchanged
 test_adoption_serializes_against_the_task_lock
+test_adoption_failure_preserves_existing_binding_pair
 test_scripts_parse_under_bash
 
 echo "ok - fm-task-contract"

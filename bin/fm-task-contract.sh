@@ -234,9 +234,13 @@ CONTROL_LOCK_HELD=0
 META_LOCK=
 META_LOCK_HELD=0
 BINDING_TMP=
+BINDING_ROLLBACK_TMP=
+META_TMP=
 adopt_cleanup() {
   local status=$?
   [ -z "$BINDING_TMP" ] || rm -f -- "$BINDING_TMP" 2>/dev/null || true
+  [ -z "$BINDING_ROLLBACK_TMP" ] || rm -f -- "$BINDING_ROLLBACK_TMP" 2>/dev/null || true
+  [ -z "$META_TMP" ] || rm -f -- "$META_TMP" 2>/dev/null || true
   if [ "$META_LOCK_HELD" = 1 ]; then
     META_LOCK_HELD=0
     fm_lock_release "$META_LOCK" || true
@@ -303,6 +307,7 @@ BINDING_DIGEST=$(fm_task_binding_compute_digest "$FM_TASK_BINDING_VERSION_SUPPOR
 }
 
 BINDING_TMP="$DATA/$ID/.binding.${BASHPID:-$$}"
+BINDING_ROLLBACK_TMP="$DATA/$ID/.binding.rollback.${BASHPID:-$$}"
 mkdir -p "$DATA/$ID"
 fm_task_binding_render "$FM_TASK_BINDING_VERSION_SUPPORTED" "$ID" ship "$REVISION" "$DISPOSITION" \
   "$DIM_invariant_complexity" "$DIM_cross_object_coupling" "$DIM_ambiguity" \
@@ -311,17 +316,45 @@ fm_task_binding_render "$FM_TASK_BINDING_VERSION_SUPPORTED" "$ID" ship "$REVISIO
   echo "error: could not render the binding record for $ID" >&2
   exit 1
 }
+if [ -f "$BINDING_FILE" ]; then
+  cp -- "$BINDING_FILE" "$BINDING_ROLLBACK_TMP" || {
+    echo "error: could not stage the previous binding record for $ID" >&2
+    exit 1
+  }
+fi
+if [ -e "$META" ]; then
+  META_TMP="$META.binding.${BASHPID:-$$}"
+  if ! fm_task_binding_meta_stage "$STATE" "$META" "$FM_TASK_BINDING_VERSION_SUPPORTED" "$REVISION" "$BINDING_DIGEST" "$META_TMP"; then
+    echo "error: $FM_TASK_BINDING_ERROR" >&2
+    exit 1
+  fi
+fi
 if ! fm_backlog_atomic_transition publish "$BINDING_TMP" "$BINDING_FILE" "binding record" "$DATA/$ID"; then
   echo "error: $FM_BACKLOG_TRANSITION_ERROR" >&2
   exit 1
 fi
 BINDING_TMP=
 
-if [ -e "$META" ]; then
-  if ! fm_task_binding_meta_bind "$STATE" "$META" "$FM_TASK_BINDING_VERSION_SUPPORTED" "$REVISION" "$BINDING_DIGEST"; then
-    echo "error: $FM_TASK_BINDING_ERROR" >&2
+if [ -n "$META_TMP" ]; then
+  if ! fm_task_binding_meta_publish "$STATE" "$META" "$META_TMP"; then
+    meta_error=$FM_TASK_BINDING_ERROR
+    rollback_failed=0
+    if [ -f "$BINDING_ROLLBACK_TMP" ]; then
+      fm_backlog_atomic_transition publish "$BINDING_ROLLBACK_TMP" "$BINDING_FILE" "binding record" "$DATA/$ID" || rollback_failed=1
+      BINDING_ROLLBACK_TMP=
+    else
+      fm_backlog_atomic_transition remove "$BINDING_FILE" "binding record" "$DATA/$ID" || rollback_failed=1
+    fi
+    if [ "$rollback_failed" -ne 0 ]; then
+      echo "error: $meta_error; rollback failed: $FM_BACKLOG_TRANSITION_ERROR" >&2
+    else
+      echo "error: $meta_error" >&2
+    fi
     exit 1
   fi
+  META_TMP=
 fi
+[ -z "$BINDING_ROLLBACK_TMP" ] || rm -f -- "$BINDING_ROLLBACK_TMP"
+BINDING_ROLLBACK_TMP=
 
 echo "adopted: $ID rev=$REVISION digest=$BINDING_DIGEST"

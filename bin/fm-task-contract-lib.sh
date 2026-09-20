@@ -351,27 +351,55 @@ fm_task_binding_gate() {  # <data-dir> <state-dir> <task-id> <worker-kind> <brie
 # The launch/relaunch serializer is the sole emitter of the binding fields, so a
 # deliberate re-adoption updates the durable task record here, exactly once, by
 # dropping every existing binding_* line and appending the validated values.
-fm_task_binding_meta_bind() {  # <state-dir> <meta> <version> <revision> <digest>
-  local state=$1 meta=$2 version=$3 revision=$4 digest=$5
-  local root tmp="$meta.binding.${BASHPID:-$$}"
+fm_task_binding_meta_stage() {  # <state-dir> <meta> <version> <revision> <digest> <tmp>
+  local meta=$2 version=$3 revision=$4 digest=$5 tmp=$6
+  local root rc
   root=$(dirname "$meta")
   if ! fm_backlog_record_present "$meta" "task record" "$root"; then
     # shellcheck disable=SC2034 # Output global, read by the sourcing caller.
     FM_TASK_BINDING_ERROR="$FM_BACKLOG_TRANSITION_ERROR"
     return 1
   fi
-  grep -v '^binding_' "$meta" >"$tmp" || {
-    FM_TASK_BINDING_ERROR="could not stage the task-record binding"
-    return 1
-  }
+  if grep -v '^binding_' "$meta" >"$tmp"; then
+    :
+  else
+    rc=$?
+    if [ "$rc" -ne 1 ]; then
+      rm -f -- "$tmp"
+      FM_TASK_BINDING_ERROR="could not stage the task-record binding"
+      return 1
+    fi
+  fi
   {
     printf 'binding_version=%s\n' "$version"
     printf 'binding_rev=%s\n' "$revision"
     printf 'binding_digest=%s\n' "$digest"
-  } >>"$tmp"
+  } >>"$tmp" || {
+    rm -f -- "$tmp"
+    FM_TASK_BINDING_ERROR="could not stage the task-record binding"
+    return 1
+  }
+  if ! fm_backlog_record_present "$tmp" "staged task record" "$root"; then
+    rm -f -- "$tmp"
+    FM_TASK_BINDING_ERROR="$FM_BACKLOG_TRANSITION_ERROR"
+    return 1
+  fi
+}
+
+fm_task_binding_meta_publish() {  # <state-dir> <meta> <tmp>
+  local meta=$2 tmp=$3
+  local root
+  root=$(dirname "$meta")
   if ! fm_backlog_atomic_transition publish "$tmp" "$meta" "task record" "$root"; then
     rm -f -- "$tmp"
     FM_TASK_BINDING_ERROR="$FM_BACKLOG_TRANSITION_ERROR"
     return 1
   fi
+}
+
+fm_task_binding_meta_bind() {  # <state-dir> <meta> <version> <revision> <digest>
+  local state=$1 meta=$2 version=$3 revision=$4 digest=$5
+  local tmp="$meta.binding.${BASHPID:-$$}"
+  fm_task_binding_meta_stage "$state" "$meta" "$version" "$revision" "$digest" "$tmp" || return 1
+  fm_task_binding_meta_publish "$state" "$meta" "$tmp"
 }

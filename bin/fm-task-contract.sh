@@ -220,6 +220,14 @@ fi
   echo "error: task $ID has no brief at $BRIEF" >&2
   exit 1
 }
+if [ -L "$DATA/$ID" ]; then
+  echo "error: task directory must not be a symlink: $DATA/$ID" >&2
+  exit 1
+fi
+if ! fm_backlog_record_parent_authorized "$BRIEF" "task brief" "$DATA"; then
+  echo "error: $FM_BACKLOG_TRANSITION_ERROR" >&2
+  exit 1
+fi
 if [ -z "$(fm_brief_task_heading_body "$BRIEF" "## Captain's intent" | tr -d '[:space:]')" ]; then
   echo "error: $BRIEF has an empty ## Captain's intent; write the captain's words before adoption" >&2
   exit 1
@@ -265,6 +273,10 @@ CONTROL_LOCK_HELD=1
 META_LOCK=$(fm_meta_lock_path "$META") || exit 1
 fm_lock_acquire_wait "$META_LOCK"
 META_LOCK_HELD=1
+if ! fm_backlog_record_parent_authorized "$BINDING_FILE" "binding record" "$DATA" parent-only; then
+  echo "error: $FM_BACKLOG_TRANSITION_ERROR" >&2
+  exit 1
+fi
 
 # The existing revision is monotonic. A record that names another task, or a
 # symlinked record, is refused rather than adopted over.
@@ -311,7 +323,6 @@ BINDING_DIGEST=$(fm_task_binding_compute_digest "$FM_TASK_BINDING_VERSION_SUPPOR
 
 BINDING_TMP="$DATA/$ID/.binding.${BASHPID:-$$}"
 BINDING_ROLLBACK_TMP="$DATA/$ID/.binding.rollback.${BASHPID:-$$}"
-mkdir -p "$DATA/$ID"
 fm_task_binding_render "$FM_TASK_BINDING_VERSION_SUPPORTED" "$ID" ship "$REVISION" "$DISPOSITION" \
   "$DIM_invariant_complexity" "$DIM_cross_object_coupling" "$DIM_ambiguity" \
   "$DIM_blast_radius" "$DIM_reversibility" "$DIM_evidence_burden" \

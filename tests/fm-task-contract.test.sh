@@ -372,6 +372,27 @@ test_adoption_serializes_against_the_task_lock() {
   pass "fm-task-contract: adoption serializes against the task control lock"
 }
 
+test_adoption_refuses_symlinked_task_directory_without_writes() {
+  local home outside out rc matches
+  home=$(make_home symlinked-task)
+  outside="$TMP_ROOT/symlinked-outside"
+  mkdir -p "$outside"
+  ln -s "$outside" "$home/data/t-link"
+  {
+    printf 'You are a crewmate.\n\n# Task\n## Captain'\''s intent\nDo the requested work.\n\n'
+    printf '## Firstmate spec\nImplement the requested behavior.\n\n'
+    printf '# Definition of done\nDelivery contract: mode=no-mistakes\n'
+  } >"$outside/brief.md"
+  out=$(adopt_default "$home" t-link)
+  rc=$?
+  expect_code 1 "$rc" "adoption must refuse a symlinked task directory: $out"
+  assert_contains "$out" "task directory must not be a symlink" \
+    "the refusal should come from the task directory boundary"
+  matches=$(find "$outside" -maxdepth 1 -name '.binding*' -o -name 'binding' | wc -l | tr -d ' ')
+  [ "$matches" = 0 ] || fail "adoption wrote binding artifacts outside data: $matches"
+  pass "fm-task-contract: adoption refuses symlinked task directories without writes"
+}
+
 test_adoption_failure_preserves_existing_binding_pair() {
   local home dir fakebin real_mv out rc check
   home=$(make_home transactional)
@@ -425,6 +446,7 @@ test_task_record_disagreement_refuses
 test_only_ship_tasks_may_enroll
 test_legacy_task_is_unenrolled_and_unchanged
 test_adoption_serializes_against_the_task_lock
+test_adoption_refuses_symlinked_task_directory_without_writes
 test_adoption_failure_preserves_existing_binding_pair
 test_scripts_parse_under_bash
 

@@ -1,0 +1,29 @@
+selected-timeout-mechanism-without-timeout-binary: perl
+
+-- bounded success preserves cwd argv stdout stderr --
+exit=0
+stdout: cwd=</var/folders/kd/66tj1y192q57zdpl4d2q_v140000gn/T/fm-timeout-owner-live.Y7Nxx5/case1/work dir> argc=<2> arg=<ok> arg=<argument with spaces>
+stderr: marker
+
+-- bounded failure preserves non-timeout exit status --
+exit=37
+
+-- checked suppresses stderr while preserving stdout and status --
+exit=37
+stdout: cwd=</var/folders/kd/66tj1y192q57zdpl4d2q_v140000gn/T/fm-timeout-owner-live.Y7Nxx5/case1/work dir> argc=<1> arg=<fail>
+
+-- query wrapper is fail-open but keeps stdout and suppresses stderr --
+exit=0
+stdout: cwd=</var/folders/kd/66tj1y192q57zdpl4d2q_v140000gn/T/fm-timeout-owner-live.Y7Nxx5/case1/work dir> argc=<1> arg=<fail>
+
+-- invalid timeout does not invoke no-mistakes --
+zero-timeout-exit=1 calls=0
+
+-- timeout returns 124 and cleans descendant process --
+timeout-exit=124 descendant-pid=23536 descendant-alive-after-timeout=no
+
+-- fm-crew-state bounded no-mistakes read falls back to pane --
+exit=0 elapsed=2s calls=1
+state: unknown · source: pane · harness state unavailable (unknown missing)
+
+ALL LIVE TIMEOUT OWNER CHECKS PASSED

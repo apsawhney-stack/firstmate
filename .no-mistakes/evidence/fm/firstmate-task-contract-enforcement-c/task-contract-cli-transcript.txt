@@ -1,24 +1,13 @@
-$ FM_HOME=$HOME_DIR bin/fm-task-contract.sh check t-live
+$ create ship brief with Captain intent, Firstmate spec, and delivery contract
+$ FM_HOME=$LAB/home bin/fm-task-contract.sh check live1
 ok: unenrolled
-
-$ FM_HOME=$HOME_DIR bin/fm-task-contract.sh adopt t-live --disposition coupled --invariant-complexity elevated --cross-object-coupling elevated --ambiguity low --blast-radius elevated --reversibility low --evidence-burden elevated
-adopted: t-live rev=1 digest=sha256:8552528021b31d8aa05d1692f1063dcbf8eead3f639b985c6aa54bc90df3bbf5
-
-$ FM_HOME=$HOME_DIR bin/fm-task-contract.sh check t-live
-ok: enrolled rev=1 digest=sha256:8552528021b31d8aa05d1692f1063dcbf8eead3f639b985c6aa54bc90df3bbf5
-
-$ # after editing ## Captain's intent
-$ FM_HOME=$HOME_DIR bin/fm-task-contract.sh check t-live
-error: intent digest mismatch: the ## Captain's intent body changed after adoption; re-run bin/fm-task-contract.sh adopt t-live
+$ FM_HOME=$LAB/home bin/fm-task-contract.sh adopt live1 --disposition coupled --invariant-complexity elevated --cross-object-coupling elevated --ambiguity low --blast-radius elevated --reversibility low --evidence-burden elevated
+adopted: live1 rev=1 digest=sha256:2f059427864b3e1ef3d93287a4ee91c30041a92f680fe73767bc4d2bdc8f6e5f
+$ FM_HOME=$LAB/home bin/fm-task-contract.sh check live1
+ok: enrolled rev=1 digest=sha256:2f059427864b3e1ef3d93287a4ee91c30041a92f680fe73767bc4d2bdc8f6e5f
+$ edit Captain intent without re-adopting, then check
 exit=1
-
-$ FM_HOME=$HOME_DIR bin/fm-task-contract.sh adopt t-live ...
-adopted: t-live rev=2 digest=sha256:9534d1c30136a2c7cd3d6701fc38670a63c4399fe0e609d50333386e599f7206
-
-$ FM_HOME=$HOME_DIR bin/fm-task-contract.sh check t-live
-ok: enrolled rev=2 digest=sha256:9534d1c30136a2c7cd3d6701fc38670a63c4399fe0e609d50333386e599f7206
-
-$ # tamper with recorded risk field in the authoritative binding
-$ FM_HOME=$HOME_DIR bin/fm-task-contract.sh check t-live
-error: binding digest mismatch: the binding record was edited after adoption; re-run bin/fm-task-contract.sh adopt t-live
-exit=1
+$ re-adopt the changed request
+adopted: live1 rev=2 digest=sha256:7fe02e002ebe394a458751368ae4b4941799c9109e216d7f6b9a1f006524e6ae
+$ final check
+ok: enrolled rev=2 digest=sha256:7fe02e002ebe394a458751368ae4b4941799c9109e216d7f6b9a1f006524e6ae

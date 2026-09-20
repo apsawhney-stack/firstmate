@@ -1,0 +1,12 @@
+# live contract spawn through Herdr lab fm-lab-contractc5-21981-11851
+scaffolded: /Users/aps/.no-mistakes/worktrees/65bf6513b0ae/01M30AHZNDN4CKECVJTGSR4F7Q/.tmp-live-contract-c/home/data/live-contract/brief.md (ship, mode=local-only; replace {TASK} and {FIRSTMATE_SPEC})
+adopted: live-contract rev=1 digest=sha256:1929457824a6dc663900d0b1c68fcfa6eb5cd1cdd18c1a2b86483e2006948c17
+notice: live-contract ships mode=local-only while the standing posture for project is no-mistakes - less rigor than the captain's standing posture; proceed only on a current explicit captain instruction or an intake judgment you can state
+warning: herdr presentation parent is absent or ambiguous; using the ordinary flat layout without projection
+spawned live-contract harness=bash kind=ship mode=local-only yolo=off window=fm-lab-contractc5-21981-11851:w1:p2 worktree=/Users/aps/.treehouse/project-bd36a1/1/project
+# metadata binding fields
+binding_version=1
+binding_rev=1
+binding_digest=sha256:1929457824a6dc663900d0b1c68fcfa6eb5cd1cdd18c1a2b86483e2006948c17
+# check after launch
+ok: enrolled rev=1 digest=sha256:1929457824a6dc663900d0b1c68fcfa6eb5cd1cdd18c1a2b86483e2006948c17

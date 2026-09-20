@@ -1,0 +1,5 @@
+# command -v shasum: 
+# command -v sha256sum: 
+exit=1
+error: 
+# no binding file written

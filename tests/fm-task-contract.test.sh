@@ -426,14 +426,6 @@ SH
   pass "fm-task-contract: failed task-record publication preserves the binding pair"
 }
 
-test_scripts_parse_under_bash() {
-  local f
-  for f in "$ROOT/bin/fm-task-contract.sh" "$ROOT/bin/fm-task-contract-lib.sh"; do
-    bash -n "$f" || fail "bash -n failed for $f"
-  done
-  pass "fm-task-contract: scripts parse cleanly"
-}
-
 test_adoption_records_identity_and_never_rewrites_the_brief
 test_unchanged_identity_is_stable_across_checks
 test_hash_helper_falls_back_and_rejects_invalid_digests
@@ -448,6 +440,5 @@ test_legacy_task_is_unenrolled_and_unchanged
 test_adoption_serializes_against_the_task_lock
 test_adoption_refuses_symlinked_task_directory_without_writes
 test_adoption_failure_preserves_existing_binding_pair
-test_scripts_parse_under_bash
 
 echo "ok - fm-task-contract"

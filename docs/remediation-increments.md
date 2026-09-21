@@ -7,9 +7,10 @@ The split follows one owner per failure mode rather than one large fix: C versio
 ## C - version the task instructions
 
 C is the opt-in task-contract binding owned by the firstmate repository.
-The task's existing Markdown `## Captain's intent` and `## Firstmate spec` bodies stay the only editable specification, and the binding records their exact digests, the task id, ship kind, a monotonic revision, the Firstmate-supplied risk levels, and one canonical binding digest.
+The task's existing Markdown `## Captain's intent` and `## Firstmate spec` bodies stay the editable specification, and the binding records the intent digest, the effective-spec digest, the task id, ship kind, a monotonic revision, the Firstmate-supplied risk levels, and one canonical binding digest.
+For promoted scout briefs, the effective spec also includes the promoted ship spec and delivery contract sections so a ship relaunch cannot accept edited promoted delivery instructions without re-adoption.
 [`bin/fm-task-contract.sh`](../bin/fm-task-contract.sh) owns adoption and the read-only check, [`bin/fm-task-contract-lib.sh`](../bin/fm-task-contract-lib.sh) owns the record format and the launch gate, and [`bin/fm-spawn.sh`](../bin/fm-spawn.sh) is the sole emitter of the `binding_*` task-record fields.
-Editing either Markdown subsection without deliberate re-adoption makes an enrolled launch or relaunch refuse, so "the same task" means the same instructions.
+Editing those Markdown inputs without deliberate re-adoption makes an enrolled launch or relaunch refuse, so "the same task" means the same instructions.
 In the DeepSeek I1A run the brief was corrected between rounds and evidence was attributed to a moving task; C would have made each accepted instruction set a numbered revision so a result cannot silently belong to different words.
 C's limit is identity, not quality: it proves the instructions did not change, never that they were complete, so the prompt gaps the incident review found would still be the author's problem.
 

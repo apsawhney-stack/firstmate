@@ -11,11 +11,13 @@
 #     --reversibility <low|elevated|high|unknown> \
 #     --evidence-burden <low|elevated|high|unknown>
 #
-# The brief's `## Captain's intent` and `## Firstmate spec` remain the only
-# editable task specification. `adopt` records an opt-in identity binding to
-# them: the task id, ship kind, a monotonic revision, the six risk levels and
-# disposition Firstmate supplied, the exact subsection digests, and one canonical
-# binding digest. It never rewrites the brief.
+# The brief's `## Captain's intent` and `## Firstmate spec` remain the editable
+# task specification. `adopt` records an opt-in identity binding to them: the
+# task id, ship kind, a monotonic revision, the six risk levels and disposition
+# Firstmate supplied, the intent digest, the effective-spec digest, and one
+# canonical binding digest. Promoted scout briefs include their promoted ship
+# spec and delivery contract in the effective-spec digest. It never rewrites the
+# brief.
 #
 # `check` is read-only and verifies the authoritative record at
 # data/<id>/binding against the brief and, when present, the task record. A
@@ -23,8 +25,9 @@
 # refuses with a specific diagnostic. An unenrolled task reports
 # `ok: unenrolled` and is never changed. Only ship tasks may enroll.
 #
-# Re-run `adopt` after any material intent, specification, kind, or risk change;
-# an enrolled launch otherwise refuses rather than accepting stale identity.
+# Re-run `adopt` after any material intent, effective-spec, kind, or risk
+# change; an enrolled launch otherwise refuses rather than accepting stale
+# identity.
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -6,7 +6,8 @@
 # projection, and no semantic completeness check. This file owns exactly one
 # thing: an opt-in, versioned binding record that identifies one unchanged
 # brief by task, ship kind, monotonic revision, Firstmate-supplied risk levels,
-# the intent and effective-spec digests, and one canonical binding digest.
+# the intent digest, the effective-spec digest, and one canonical binding
+# digest.
 #
 # Sourced by bin/fm-task-contract.sh (the adoption/check CLI) and by
 # bin/fm-spawn.sh (the launch/relaunch gate and the sole metadata emitter).
@@ -19,8 +20,8 @@
 # adoption never rewrites the brief, and no new dependency is required.
 #
 # Structural identity only: a passing gate proves that the binding exists, that
-# it still matches the Markdown request/specification contract, and that the task
-# record agrees. It does not prove the risk assessment was correct or the
+# it still matches the Markdown request and effective-spec contract, and that the
+# task record agrees. It does not prove the risk assessment was correct or the
 # specification good.
 
 # Output globals consumed by the sourcing caller: the launch gate's verdict
@@ -146,6 +147,8 @@ fm_task_binding_effective_spec_text() {  # <brief>
   fi
 }
 
+# The effective spec is the task `## Firstmate spec`, plus the promoted ship
+# spec and delivery contract sections when a promoted scout brief carries them.
 fm_task_binding_spec_digest() {  # <brief>
   local text hash
   text=$(fm_task_binding_effective_spec_text "$1") || return 1

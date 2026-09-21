@@ -1294,6 +1294,11 @@ if ! wait "$teardown_pid"; then
   printf 'serialized retirement output:\n%s\n' "$(cat "$TMP_ROOT/teardown-serialized.out")" >&2
   fail "safe remote retirement failed after handoff serialization"
 fi
+# The ship-only fresh-spawn control lock must never reach this path: retirement
+# waits on the registry and backlog-handoff locks instead of refusing here.
+assert_no_grep 'another lifecycle action is already running for task ios' \
+  "$TMP_ROOT/teardown-serialized.out" \
+  "remote retirement refused on the ship-only lifecycle lock instead of waiting"
 assert_absent "$REMOTE_HOME" "remote retirement did not remove the remote home"
 assert_absent "$PARENT/state/ios.meta" "remote retirement did not remove parent metadata"
 assert_absent "$PARENT/state/.backlog-handoff-ios.wake-pending" \

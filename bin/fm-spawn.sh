@@ -515,6 +515,11 @@ fm_backlog_directory_present "$STATE" "state directory" || {
 . "$SCRIPT_DIR/fm-pr-lib.sh"
 # shellcheck source=bin/fm-dod-lib.sh
 . "$SCRIPT_DIR/fm-dod-lib.sh"
+# shellcheck source=bin/fm-task-contract-lib.sh
+. "$SCRIPT_DIR/fm-task-contract-lib.sh"
+# Clear inherited binding output globals so only this launch's validated gate can
+# populate the task-record fields below.
+FM_TASK_BINDING_VERSION='' FM_TASK_BINDING_REV='' FM_TASK_BINDING_DIGEST=''
 # shellcheck source=bin/fm-trace-context-lib.sh
 . "$SCRIPT_DIR/fm-trace-context-lib.sh"
 # shellcheck source=bin/fm-remote-readiness-lib.sh
@@ -1466,6 +1471,19 @@ if [ "$RELAUNCH" -eq 0 ]; then
     exit 1
   fi
   SPAWN_TASK_SET_LOCK_HELD=1
+  # Only a fresh SHIP spawn serializes against a task-contract adoption, which
+  # takes this same per-task control lock (bin/fm-task-contract.sh adopt). A
+  # secondmate spawn must keep its established registry and backlog-handoff
+  # serialization, because a concurrent remote retirement waits on those locks
+  # and treats this one as an immediate refusal.
+  if [ "$KIND" = ship ]; then
+    SPAWN_CONTROL_LOCK="$STATE/.control-$ID.lock"
+    if ! fm_lock_try_acquire "$SPAWN_CONTROL_LOCK"; then
+      echo "error: another lifecycle action is already running for task $ID" >&2
+      exit 1
+    fi
+    SPAWN_CONTROL_LOCK_HELD=1
+  fi
   spawn_refuse_if_away_spend_cap
   spawn_require_relocated_queued_work
 fi
@@ -2631,6 +2649,17 @@ if [ "$KIND" = ship ] || [ "$KIND" = scout ]; then
     echo "error: $BRIEF ## Captain's intent has an operator-address line: $ADDRESS_LINE; write the captain's actual words without a Captain label or address before spawn, since the heading already records provenance" >&2
     exit 1
   fi
+  # Opt-in task-contract binding gate: an enrolled task's authoritative binding
+  # is verified against the brief's two Markdown subsections, its ship kind, its
+  # monotonic revision, and the recorded task-record fields before the launch
+  # overlay is published, before the task record is written, and before any
+  # endpoint is allocated. An unenrolled task skips this entirely.
+  if fm_task_binding_enrolled "$DATA" "$STATE" "$ID"; then
+    if ! fm_task_binding_gate "$DATA" "$STATE" "$ID" "$KIND" "$BRIEF"; then
+      echo "error: $FM_TASK_BINDING_ERROR" >&2
+      exit 1
+    fi
+  fi
   if [ "$KIND" = ship ] && [ "$MODE" = no-mistakes ]; then
     if fm_brief_task_heading_present "$BRIEF" "## Captain's intent"; then
       CAPTAIN_INTENT=$(fm_brief_task_heading_body "$BRIEF" "## Captain's intent")
@@ -3034,6 +3063,12 @@ if [ "$SPAWN_META_LOCK_HELD" != 1 ]; then
   SPAWN_META_LOCK=$(fm_meta_lock_path "$STATE/$ID.meta") || exit 1
   fm_lock_acquire_wait "$SPAWN_META_LOCK"
   SPAWN_META_LOCK_HELD=1
+fi
+if [ "$KIND" = ship ] && fm_task_binding_enrolled "$DATA" "$STATE" "$ID"; then
+  if ! fm_task_binding_gate "$DATA" "$STATE" "$ID" "$KIND" "${SOURCE_BRIEF:-$BRIEF}"; then
+    echo "error: $FM_TASK_BINDING_ERROR" >&2
+    exit 1
+  fi
 fi
 if [ -e "$STATE/$ID.backlog-close" ] || [ -L "$STATE/$ID.backlog-close" ]; then
   echo "error: task $ID has a pending authoritative backlog close at $STATE/$ID.backlog-close; finish or repair that close before dispatching a new worker" >&2
@@ -4274,7 +4309,7 @@ SPAWN_META_PATH=$SPAWN_META_TMP
 preserve_relaunch_meta() {
   awk -F= '
     BEGIN {
-      split("window endpoint_task_id worktree project harness kind mode yolo tasktmp model effort busy_gen spawn_gen traceparent backend herdr_session herdr_workspace_id herdr_tab_id herdr_pane_id zellij_session zellij_tab_id zellij_pane_id orca_worktree_id terminal cmux_workspace_id cmux_surface_id home projects control_relaunch_tx", keys, " ")
+      split("window endpoint_task_id worktree project harness kind mode yolo tasktmp model effort busy_gen spawn_gen traceparent backend herdr_session herdr_workspace_id herdr_tab_id herdr_pane_id zellij_session zellij_tab_id zellij_pane_id orca_worktree_id terminal cmux_workspace_id cmux_surface_id home projects control_relaunch_tx binding_version binding_rev binding_digest", keys, " ")
       for (i in keys) owned[keys[i]] = 1
     }
     !($1 in owned)
@@ -4289,6 +4324,14 @@ preserve_relaunch_meta() {
   echo "kind=$KIND"
   [ -z "$MODE" ] || echo "mode=$MODE"
   [ -z "$YOLO" ] || echo "yolo=$YOLO"
+  # The launch/relaunch serializer is the sole emitter of the opt-in binding
+  # fields: validated values are written exactly once here, and the owned list
+  # above stops a relaunch from copying a stale preserved value through.
+  if [ -n "${FM_TASK_BINDING_VERSION:-}" ]; then
+    echo "binding_version=$FM_TASK_BINDING_VERSION"
+    echo "binding_rev=$FM_TASK_BINDING_REV"
+    echo "binding_digest=$FM_TASK_BINDING_DIGEST"
+  fi
   echo "tasktmp=$TASK_TMP"
   echo "model=${MODEL:-default}"
   echo "effort=${EFFORT:-default}"

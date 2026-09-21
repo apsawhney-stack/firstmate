@@ -27,7 +27,7 @@ write_ship_brief() {  # <home> <id> [<intent>] [<spec>]
     printf 'You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.\n\n'
     printf '# Task\n## Captain'\''s intent\n%s\n\n## Firstmate spec\n%s\n\n' "$intent" "$spec"
     printf '# Setup\nYou are in a disposable git worktree.\n\n'
-    printf '1. First action: create your branch: `git checkout -b fm/%s`\n\n' "$id"
+    printf "1. First action: create your branch: \`git checkout -b fm/%s\`\n\n" "$id"
     printf '# Project memory\nRecord only durable project knowledge.\n\n'
     printf '# Definition of done\nDelivery contract: mode=no-mistakes\n'
   } >"$home/data/$id/brief.md"
@@ -336,7 +336,7 @@ test_only_ship_tasks_may_enroll() {
   {
     printf 'You are a crewmate: an autonomous worker agent managed by firstmate. Work on your own; do not wait for a human.\n\n'
     printf '# Task\n## Captain'\''s intent\nInvestigate.\n\n'
-    printf '## Firstmate spec\nReport findings.\n# Setup\n1. First action: create your branch: `git checkout -b fm/t-scout`\n# Project memory\n# Definition of done\nDelivery contract: mode=no-mistakes\n\n'
+    printf "## Firstmate spec\nReport findings.\n# Setup\n1. First action: create your branch: \`git checkout -b fm/t-scout\`\n# Project memory\n# Definition of done\nDelivery contract: mode=no-mistakes\n\n"
     printf '# Setup\nThis is a SCOUT task: the deliverable is a written report, not a PR.\n'
   } >"$home/data/t-scout/brief.md"
   out=$(adopt_default "$home" t-scout)

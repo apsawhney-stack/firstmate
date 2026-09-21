@@ -1,0 +1,6 @@
+session=fm-lab-contractc-80990-18077
+$ bin/fm-herdr-lab.sh provision <session> (provision performs prepare for a new session)
+$ fm-task-contract.sh adopt ...
+adopted: herdr-contract-c rev=1 digest=sha256:09c2037b8b5b9be8ff507479de13e68c35c3f6cb8f36e6608da2457895cd1d25
+$ HERDR_SESSION=<lab> fm-spawn.sh <id> <worktree> --backend herdr --mode no-mistakes --yolo off "bash --noprofile --norc"
+error: no-mistakes gate agent must not drive the fleet (NO_MISTAKES_GATE set)

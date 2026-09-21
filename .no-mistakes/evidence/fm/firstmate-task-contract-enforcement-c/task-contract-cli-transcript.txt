@@ -1,13 +1,33 @@
-$ create ship brief with Captain intent, Firstmate spec, and delivery contract
-$ FM_HOME=$LAB/home bin/fm-task-contract.sh check live1
+$ FM_HOME=$HOME_DIR FM_DATA_OVERRIDE=$HOME_DIR/data FM_STATE_OVERRIDE=$HOME_DIR/state bin/fm-task-contract.sh check demo-task
 ok: unenrolled
-$ FM_HOME=$LAB/home bin/fm-task-contract.sh adopt live1 --disposition coupled --invariant-complexity elevated --cross-object-coupling elevated --ambiguity low --blast-radius elevated --reversibility low --evidence-burden elevated
-adopted: live1 rev=1 digest=sha256:2f059427864b3e1ef3d93287a4ee91c30041a92f680fe73767bc4d2bdc8f6e5f
-$ FM_HOME=$LAB/home bin/fm-task-contract.sh check live1
-ok: enrolled rev=1 digest=sha256:2f059427864b3e1ef3d93287a4ee91c30041a92f680fe73767bc4d2bdc8f6e5f
-$ edit Captain intent without re-adopting, then check
+
+$ ... adopt demo-task risk floor ...
+adopted: demo-task rev=1 digest=sha256:a62636aba1a0b7b22037fb7c3d63d5b770d4a6af528dd43859c6e8d399c2a6ae
+
+$ sed -n "1,14p" data/demo-task/binding
+binding_version=1
+task=demo-task
+kind=ship
+revision=1
+disposition=coupled
+invariant_complexity=elevated
+cross_object_coupling=elevated
+ambiguity=low
+blast_radius=elevated
+reversibility=low
+evidence_burden=elevated
+intent_digest=sha256:339fdd6d2152be50050abadd151f15bad9460265ddee471cadf15e4d21a2a360
+spec_digest=sha256:c4984a809c2592ab869881fa2bb6e09dbf1066670859fe17d6bb525d90390bca
+binding_digest=sha256:a62636aba1a0b7b22037fb7c3d63d5b770d4a6af528dd43859c6e8d399c2a6ae
+
+$ ... check adopted task ...
+ok: enrolled rev=1 digest=sha256:a62636aba1a0b7b22037fb7c3d63d5b770d4a6af528dd43859c6e8d399c2a6ae
+
+$ ... check after editing the Markdown spec ...
+error: spec digest mismatch: the ## Firstmate spec body changed after adoption; re-run bin/fm-task-contract.sh adopt demo-task
 exit=1
-$ re-adopt the changed request
-adopted: live1 rev=2 digest=sha256:7fe02e002ebe394a458751368ae4b4941799c9109e216d7f6b9a1f006524e6ae
-$ final check
-ok: enrolled rev=2 digest=sha256:7fe02e002ebe394a458751368ae4b4941799c9109e216d7f6b9a1f006524e6ae
+
+$ ... restore brief, re-adopt, then simulate existing task meta missing binding fields ...
+adopted: demo-task rev=2 digest=sha256:7b2cae257a4bec0b74c9728ad966beda92bdeb8f499376fd50905c37110bfee0
+error: stale binding version: task record records '<missing>', binding record is '1'
+exit=1

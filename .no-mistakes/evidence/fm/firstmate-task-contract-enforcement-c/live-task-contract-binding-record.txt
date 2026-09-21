@@ -1,0 +1,14 @@
+binding_version=1
+task=live-ship
+kind=ship
+revision=1
+disposition=coupled
+invariant_complexity=elevated
+cross_object_coupling=elevated
+ambiguity=low
+blast_radius=elevated
+reversibility=low
+evidence_burden=elevated
+intent_digest=sha256:339fdd6d2152be50050abadd151f15bad9460265ddee471cadf15e4d21a2a360
+spec_digest=sha256:a7cd483bea0c875d4144b04c1447ab98538d7ffcc4e37914d9a2d9f8755701c8
+binding_digest=sha256:7791fa9a2de20841d1b14b5d8173ee8616cd343e95116ff93de84483670b5aff

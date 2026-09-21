@@ -1,0 +1,8 @@
+$ FM_HOME="$HOME_DIR" FM_DATA_OVERRIDE="$HOME_DIR/data" FM_STATE_OVERRIDE="$HOME_DIR/state" bin/fm-task-contract.sh check live-ship
+ok: unenrolled
+$ FM_HOME="$HOME_DIR" ... bin/fm-task-contract.sh adopt live-ship --disposition coupled --invariant-complexity elevated --cross-object-coupling elevated --ambiguity low --blast-radius elevated --reversibility low --evidence-burden elevated
+adopted: live-ship rev=1 digest=sha256:7791fa9a2de20841d1b14b5d8173ee8616cd343e95116ff93de84483670b5aff
+$ FM_HOME="$HOME_DIR" ... bin/fm-task-contract.sh check live-ship
+ok: enrolled rev=1 digest=sha256:7791fa9a2de20841d1b14b5d8173ee8616cd343e95116ff93de84483670b5aff
+$ python3 - <<PY  # edit Firstmate spec without re-adoption
+$ FM_HOME="$HOME_DIR" ... bin/fm-task-contract.sh check live-ship || true

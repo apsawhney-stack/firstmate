@@ -1471,12 +1471,19 @@ if [ "$RELAUNCH" -eq 0 ]; then
     exit 1
   fi
   SPAWN_TASK_SET_LOCK_HELD=1
-  SPAWN_CONTROL_LOCK="$STATE/.control-$ID.lock"
-  if ! fm_lock_try_acquire "$SPAWN_CONTROL_LOCK"; then
-    echo "error: another lifecycle action is already running for task $ID" >&2
-    exit 1
+  # Only a fresh SHIP spawn serializes against a task-contract adoption, which
+  # takes this same per-task control lock (bin/fm-task-contract.sh adopt). A
+  # secondmate spawn must keep its established registry and backlog-handoff
+  # serialization, because a concurrent remote retirement waits on those locks
+  # and treats this one as an immediate refusal.
+  if [ "$KIND" = ship ]; then
+    SPAWN_CONTROL_LOCK="$STATE/.control-$ID.lock"
+    if ! fm_lock_try_acquire "$SPAWN_CONTROL_LOCK"; then
+      echo "error: another lifecycle action is already running for task $ID" >&2
+      exit 1
+    fi
+    SPAWN_CONTROL_LOCK_HELD=1
   fi
-  SPAWN_CONTROL_LOCK_HELD=1
   spawn_refuse_if_away_spend_cap
   spawn_require_relocated_queued_work
 fi

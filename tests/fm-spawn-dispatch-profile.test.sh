@@ -1073,6 +1073,46 @@ test_fresh_spawn_refuses_lifecycle_lock_contention() {
   pass "fm-spawn: fresh spawn refuses lifecycle lock contention"
 }
 
+# The ship-only fresh-spawn control lock exists to serialize a ship spawn with
+# task-contract adoption. It must not reach a secondmate spawn, whose remote
+# retirement waits on the registry and backlog-handoff locks and treats this one
+# as an immediate refusal. Holding it here proves the exemption directly.
+test_secondmate_spawn_ignores_the_ship_lifecycle_lock() {
+  local rec id sm out status lock holder waited=0 release
+  id=secondmate-lock-exempt-z25
+  rec=$(make_spawn_case secondmate-lock-exempt codex "$id")
+  read_case_record "$rec"
+  sm="$CASE_DIR/secondmate-home"
+  make_seeded_secondmate_home "$sm" "$id"
+  lock="$HOME_DIR/state/.control-$id.lock"
+  release="$CASE_DIR/release-secondmate-lock"
+  bash -c '
+    . "$1/bin/fm-wake-lib.sh"
+    fm_lock_acquire_wait "$2"
+    : >"$3"
+    while [ ! -e "$4" ]; do sleep 0.05; done
+    fm_lock_release "$2"
+  ' _ "$ROOT" "$lock" "$CASE_DIR/secondmate-lock-ready" "$release" &
+  holder=$!
+  while [ ! -e "$CASE_DIR/secondmate-lock-ready" ] && [ "$waited" -lt 100 ]; do
+    sleep 0.05
+    waited=$((waited + 1))
+  done
+  [ -e "$CASE_DIR/secondmate-lock-ready" ] || {
+    kill "$holder" 2>/dev/null || true
+    fail "secondmate lock holder never acquired the control lock"
+  }
+  out=$(run_spawn "$HOME_DIR" "$WT_DIR" "$FAKEBIN_DIR" "$LAUNCH_LOG" "$id" "$sm" --secondmate)
+  status=$?
+  : >"$release"
+  wait "$holder" 2>/dev/null || true
+  expect_code 0 "$status" "a fresh secondmate spawn must not take the ship-only lifecycle lock"$'\n'"$out"
+  assert_contains "$out" "spawned $id harness=codex kind=secondmate" \
+    "secondmate launch did not use secondmate harness resolution"
+  assert_grep "kind=secondmate" "$HOME_DIR/state/$id.meta" "secondmate meta missing kind=secondmate"
+  pass "fm-spawn: a fresh secondmate spawn is exempt from the ship lifecycle lock"
+}
+
 # Execute the actual emitted command in a synthetic pane environment: the
 # fake backend records delivery, while real shells exercise the env boundary.
 # No developer environment or credential values are inspected by these probes.
@@ -1516,5 +1556,6 @@ test_claude_crewmate_launch_carries_the_attribution_policy
 test_claude_secondmate_launch_carries_the_attribution_policy
 test_active_dispatch_profile_does_not_block_secondmate_launch
 test_fresh_spawn_refuses_lifecycle_lock_contention
+test_secondmate_spawn_ignores_the_ship_lifecycle_lock
 
 echo "# all fm-spawn-dispatch-profile tests passed"

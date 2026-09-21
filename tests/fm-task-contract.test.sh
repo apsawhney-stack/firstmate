@@ -316,8 +316,13 @@ test_task_record_disagreement_refuses() {
   out=$(run_check "$home" t-meta)
   assert_contains "$out" "ok: enrolled rev=1 " "adoption should bind the existing task record"
 
+  printf 'window=w\nkind=ship\n' >"$home/state/t-meta.meta"
+  out=$(run_check "$home" t-meta)
+  assert_contains "$out" "stale binding version" "an existing task record missing binding fields must refuse"
+
   # Duplicate preserved metadata keys are refused rather than trusted.
-  printf 'binding_rev=1\n' >>"$home/state/t-meta.meta"
+  printf 'window=w\nkind=ship\nbinding_version=1\nbinding_rev=1\nbinding_digest=%s\nbinding_rev=1\n' \
+    "$(sed -n 's/^binding_digest=//p' "$(binding_file "$home" t-meta)")" >"$home/state/t-meta.meta"
   out=$(run_check "$home" t-meta)
   assert_contains "$out" "task record repeats binding key(s): binding_rev" "duplicate metadata keys must refuse"
 

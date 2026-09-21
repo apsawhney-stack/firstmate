@@ -409,7 +409,7 @@ fm_task_binding_gate() {  # <data-dir> <state-dir> <task-id> <worker-kind> <brie
     return 1
   fi
 
-  if fm_task_binding_meta_present "$meta"; then
+  if [ -e "$meta" ] || [ -L "$meta" ]; then
     duplicates=$(fm_task_binding_duplicate_keys "$meta")
     if [ -n "$duplicates" ]; then
       FM_TASK_BINDING_ERROR="task record repeats binding key(s): $(printf '%s' "$duplicates" | tr '\n' ' ' | sed 's/ $//')"

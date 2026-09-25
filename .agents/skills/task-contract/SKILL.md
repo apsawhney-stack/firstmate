@@ -2,7 +2,7 @@
 name: task-contract
 description: >-
   Agent-only semantic risk and specification procedure.
-  Load before finalizing or materially revising a ship specification or scout question, and before revising a coupled, unresolved, or evidence-heavy handoff for validation.
+  Load before finalizing or materially revising a ship specification or scout question, and before revising a coupled, unresolved, authority-limited, or evidence-heavy handoff for validation.
   Owns the proportionate high-risk handoff and pre-validation self-check guidance, and feeds task suitability into existing model-fit selection without adding a routing system.
 user-invocable: false
 metadata:
@@ -38,7 +38,7 @@ Choose the disposition from the limiting dimension, retaining any other constrai
 - **unresolved:** uncertainty could change whether or what to build; route the question through the existing decision owner, or commission a scout when a separate knowledge deliverable is needed.
 - **authority-limited:** execution or acceptance needs authority not granted; more capable reasoning cannot supply that authority.
 
-Scale the handoff to the limiting disposition: keep routine work at the short specification below, and for coupled, unresolved, authority-conflicting, or evidence-heavy work make the governing accepted behavior, its authority or source of truth, the disposition of every material unresolved or permission question, adversarial examples across the affected paths, evidence limits and the unresolved owners explicit in Firstmate spec.
+Scale the handoff to the limiting disposition: keep routine work at the short specification below, and for coupled, unresolved, authority-limited, or evidence-heavy work make the governing accepted behavior, its authority or source of truth, the disposition of every material unresolved or permission question, adversarial examples across the affected paths, evidence limits and the unresolved owners explicit in Firstmate spec.
 A conflict between accepted requirements is itself unresolved work: escalate it to the existing decision owner rather than choosing silently, and when it cannot be settled before dispatch, scope an honestly incomplete result instead of promising a positive case.
 
 Resolve an unknown that could change implementation or permission before shipping; bounded research may stay inside a ship only when it cannot change whether or what to build.
@@ -73,7 +73,7 @@ The suitability assessment, completeness procedure and Firstmate-authored constr
 
 ## Pre-validation self-check
 
-For coupled, unresolved, authority-conflicting, or evidence-heavy work, instruct the worker in Firstmate spec to self-check before entering the already-selected no-mistakes run: inspect the complete changed diff, exercise the intended counterexamples with the targeted behavioral or traceability tests, record the exact tested commit, and list omitted evidence, skipped checks and outstanding conflicts.
+For coupled, unresolved, authority-limited, or evidence-heavy work, instruct the worker in Firstmate spec to self-check before entering the already-selected no-mistakes run: inspect the complete changed diff, exercise the intended counterexamples with the targeted behavioral or traceability tests, record the exact tested commit, and list omitted evidence, skipped checks and outstanding conflicts.
 Instruct the worker to pass those facts into the existing gate as evidence through the ordinary gate flow.
 That self-check is input, not approval: it does not replace independent review, tests, lint, docs or CI, it never answers an ask-user finding, and it cannot weaken, skip or replace the selected delivery path.
 
